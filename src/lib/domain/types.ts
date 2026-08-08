@@ -65,8 +65,6 @@ export interface DefinitionChamp {
   echelle?: { bas: string; haut: string }
   actif: boolean
   ordre: number
-  /** Non supprimable ni désactivable. Le poids uniquement. */
-  systeme: boolean
   /** Créé par l'utilisateur (C18). */
   personnalise: boolean
 }

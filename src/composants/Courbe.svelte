@@ -8,7 +8,7 @@
    *    réelles, qui restent toujours lisibles (§ 5.3 v1.0) ;
    *  - le graphique est doublé d'une table de données pour les lecteurs d'écran (J6).
    */
-  import type { PointSerie } from '$lib/domain/tendance'
+  import { sensEvolution, type PointSerie } from '$lib/domain/tendance'
   import type { Evenement } from '$lib/domain/types'
   import { formaterMoisCompact, formaterDate } from '$lib/domain/dates'
   import { formaterNombre } from '$lib/domain/unites'
@@ -23,6 +23,13 @@
     unite?: string
     libelle?: string
     formatDate?: 'jj/mm/aaaa' | 'aaaa-mm-jj'
+    /**
+     * § 12.1, mode sans chiffre : la forme de la courbe reste — c'est elle qui
+     * porte la tendance — mais les valeurs chiffrées de l'axe et de la table
+     * alternative disparaissent. Sans cela, le mode se contournerait d'un regard
+     * sur la graduation.
+     */
+    masquerValeurs?: boolean
   }
 
   let {
@@ -34,7 +41,19 @@
     unite = 'kg',
     libelle = 'Poids',
     formatDate = 'jj/mm/aaaa',
+    masquerValeurs = false,
   }: Props = $props()
+
+  /** Sens d'évolution d'un point au précédent, pour la table en mode sans chiffre. */
+  function sensDuPoint(i: number): string {
+    const courant = points[i]
+    const precedent = points[i - 1]
+    if (!courant || !precedent) return 'première valeur'
+    const delta = courant.valeur - precedent.valeur
+    return sensEvolution(delta) === 'stable'
+      ? 'stable'
+      : (delta > 0 ? 'en hausse' : 'en baisse')
+  }
 
   const L = 46, R = 14, T = 16, B = 30
   const W = 640, H = 260
@@ -147,7 +166,9 @@
 
       {#each graduationsY as g}
         <line x1={L} x2={W - R} y1={g.y} y2={g.y} class="grille" />
-        <text x={L - 8} y={g.y + 4} class="etiquette-y">{formaterNombre(g.v, 0)}</text>
+        {#if !masquerValeurs}
+          <text x={L - 8} y={g.y + 4} class="etiquette-y">{formaterNombre(g.v, 0)}</text>
+        {/if}
       {/each}
 
       <!-- Tendance lissée, derrière les valeurs réelles (G4) -->
@@ -191,10 +212,21 @@
   <!-- Alternative textuelle : même information, lisible au lecteur d'écran (J6) -->
   <table id={idTable} class="pour-lecteur">
     <caption>{libelle} — {points.length} mesures</caption>
-    <thead><tr><th scope="col">Date</th><th scope="col">{libelle} ({unite})</th></tr></thead>
+    <thead>
+      <tr>
+        <th scope="col">Date</th>
+        <!-- Une échelle n'a pas d'unité : « Stress () » n'aurait aucun sens. -->
+        <th scope="col">
+          {masquerValeurs ? 'Évolution' : (unite ? `${libelle} (${unite})` : libelle)}
+        </th>
+      </tr>
+    </thead>
     <tbody>
-      {#each points as p}
-        <tr><td>{formaterDate(p.date, formatDate)}</td><td>{formaterNombre(p.valeur)}</td></tr>
+      {#each points as p, i}
+        <tr>
+          <td>{formaterDate(p.date, formatDate)}</td>
+          <td>{masquerValeurs ? sensDuPoint(i) : formaterNombre(p.valeur)}</td>
+        </tr>
       {/each}
     </tbody>
   </table>

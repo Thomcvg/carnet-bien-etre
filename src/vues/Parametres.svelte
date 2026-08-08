@@ -14,7 +14,7 @@
   import { pwa } from '$lib/etat/pwa.svelte'
   import { sauvegardeAuto } from '$lib/etat/sauvegardeAuto.svelte'
   import { analyserNombre, formaterNombre } from '$lib/domain/unites'
-  import { CLE_TAILLE, champsDeCategorie } from '$lib/domain/champs'
+  import { CLE_TAILLE, champsDeCategorie, estDernierChampActif } from '$lib/domain/champs'
   import { versISO } from '$lib/domain/dates'
   import { depuisJson, lireFichier, telechargerCsv, telechargerXlsx, telechargerJson } from '$lib/io/sauvegarde'
   import { VERSION_SCHEMA } from '$lib/domain/migrations'
@@ -243,11 +243,14 @@
     </div>
 
     <div class="champ">
-      <label for="p-mode">Niveau de détail</label>
+      <label for="p-mode">Écrans affichés</label>
       <select id="p-mode" value={profil.mode}
         onchange={(e) => carnet.majProfil({ mode: e.currentTarget.value as 'essentiel' | 'complet' })}>
-        <option value="essentiel">Essentiel — poids, courbe et historique</option>
-        <option value="complet">Complet — tous les modules activés</option>
+        <!-- Le libellé dit ce que le réglage fait réellement : il choisit les
+             écrans affichés dans la barre, il n'active aucune donnée. Ce sont
+             les « Données suivies » ci-dessous qui font cela. -->
+        <option value="essentiel">Essentiel — accueil, historique et graphiques</option>
+        <option value="complet">Complet — ajoute l'écran Bilan</option>
       </select>
     </div>
 
@@ -256,7 +259,11 @@
         onchange={(e) => carnet.majProfil({ modeSansChiffre: e.currentTarget.checked })} />
       <span>
         <strong>Mode sans chiffre</strong>
-        <span class="aide">Masque les valeurs de poids et n'affiche que les tendances.</span>
+        <span class="aide">
+          Remplace partout les valeurs de poids par leur seule tendance — accueil,
+          historique, bilan et graphiques. Les autres données restent lisibles, et
+          la fiche pour le médecin garde les chiffres dont il a besoin.
+        </span>
       </span>
     </label>
   </section>
@@ -296,8 +303,9 @@
   <section class="carte pile gap-m">
     <h2>Données suivies</h2>
     <p class="aide">
-      Activez uniquement ce que vous voulez saisir. Désactiver une donnée ne supprime
-      jamais son historique.
+      Activez uniquement ce que vous voulez saisir — le poids compris, qui n'a rien
+      d'obligatoire. Suivre seulement son sommeil ou son niveau de stress est un
+      usage à part entière. Désactiver une donnée ne supprime jamais son historique.
     </p>
 
     {#each CATEGORIES as cat (cat.valeur)}
@@ -307,13 +315,17 @@
           <h3>{cat.libelle}</h3>
           <ul class="champs">
             {#each champsCategorie as c (c.cle)}
+              {@const dernier = estDernierChampActif(carnet.champs, c.cle)}
               <li class="ligne-champ">
                 <label class="bascule">
-                  <input type="checkbox" checked={c.actif} disabled={c.systeme}
+                  <!-- Aucun champ n'est privilégié : seul le tout dernier champ
+                       actif résiste, parce qu'un carnet sans champ n'a plus de
+                       formulaire de saisie. -->
+                  <input type="checkbox" checked={c.actif} disabled={dernier}
                     onchange={(e) => carnet.basculerChamp(c.cle, e.currentTarget.checked)} />
                   <span>
                     {c.libelle}
-                    {#if c.systeme}<span class="fixe">toujours actif</span>{/if}
+                    {#if dernier}<span class="fixe">seule donnée suivie</span>{/if}
                     {#if c.personnalise}<span class="fixe fixe--perso">personnalisé</span>{/if}
                   </span>
                 </label>

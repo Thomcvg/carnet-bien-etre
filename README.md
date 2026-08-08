@@ -12,8 +12,9 @@ toute personne qui veut prendre du recul sur son évolution plutôt que la contr
 - **Tout reste sur votre appareil.** Aucun compte, aucun serveur, aucun traceur.
   La seule exception possible est la météo (facultative, désactivée par défaut,
   voir § 11.8 du cahier des charges).
-- **Rien n'est obligatoire** au-delà d'une date et d'un poids. Toute donnée
-  complémentaire est facultative et désactivée par défaut.
+- **Rien n'est obligatoire** au-delà d'une date. Toute donnée est facultative et
+  désactivée par défaut — **le poids compris** : un carnet qui ne suit que le
+  sommeil ou le niveau de stress est un usage à part entière.
 - **Une saisie mensuelle en environ deux minutes** reste le cas d'usage central.
 
 ## État du projet

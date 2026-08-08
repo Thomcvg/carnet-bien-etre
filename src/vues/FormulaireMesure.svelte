@@ -59,8 +59,11 @@
   const versSaisie = (kg: number) => masseVersAffichage(kg, unite)
   const versStockage = (saisi: number) => masseVersStockage(saisi, unite)
 
+  // Le poids ne s'affiche que s'il est suivi : c'est un champ comme un autre (§ 3).
   const champPoidsBrut = $derived(trouverChamp(carnet.champs, CLE_POIDS))
-  const champPoids = $derived(champPoidsBrut ? champAffiche(champPoidsBrut, unite) : undefined)
+  const champPoids = $derived(
+    champPoidsBrut?.actif ? champAffiche(champPoidsBrut, unite) : undefined,
+  )
   const mensurations = $derived(mensurationsActives(carnet.champs))
   const champsBienEtre = $derived(champsBienEtreActifs(carnet.champs))
   const champsActivite = $derived(champsActiviteActifs(carnet.champs))
@@ -92,8 +95,25 @@
       : trouverDoublon(carnet.mesures, date, mesureId ?? undefined),
   )
 
-  const poidsSaisi = $derived(analyserNombre(saisies[CLE_POIDS] ?? ''))
-  const peutEnregistrer = $derived(estDateISOValide(date) && poidsSaisi !== undefined)
+  /**
+   * Une mesure valide demande une date et **au moins une valeur**.
+   *
+   * Elle exigeait un poids : cela revenait à interdire le carnet à quelqu'un qui
+   * ne veut suivre que son sommeil ou son stress. Le poids étant désormais
+   * désactivable comme le reste, la condition porte sur le fait d'avoir noté
+   * quelque chose — peu importe quoi.
+   */
+  const auMoinsUneValeur = $derived.by(() => {
+    for (const [cle, texte] of Object.entries(saisies)) {
+      if (cle.startsWith('tension_')) continue
+      if (analyserNombre(texte) !== undefined) return true
+    }
+    if (Object.keys(valeursTypees).length > 0) return true
+    return analyserNombre(saisies['tension_sys'] ?? '') !== undefined
+      && analyserNombre(saisies['tension_dia'] ?? '') !== undefined
+  })
+
+  const peutEnregistrer = $derived(estDateISOValide(date) && auMoinsUneValeur)
 
   function reinitialiser() {
     date = versISO(new Date())
@@ -106,6 +126,14 @@
     bienEtreDeplie = false
     activiteDepliee = false
     noteDepliee = false
+
+    // Sans le poids en tête, le formulaire n'offrirait que des sections repliées
+    // et paraîtrait vide : on ouvre la première qui contient quelque chose.
+    if (!champPoids) {
+      if (mensurations.length > 0) mensurationsDepliees = true
+      else if (champsBienEtre.length > 0) bienEtreDeplie = true
+      else if (champsActivite.length > 0) activiteDepliee = true
+    }
   }
 
   // Prépare le formulaire à chaque ouverture, en mode création comme en modification.

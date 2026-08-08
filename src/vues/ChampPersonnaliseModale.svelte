@@ -19,6 +19,8 @@
   let type = $state<TypeChamp>('echelle5')
   let unite = $state('')
   let optionsTexte = $state('')
+  let poleBas = $state('')
+  let poleHaut = $state('')
 
   $effect(() => {
     if (!ouvert) return
@@ -27,6 +29,8 @@
     type = 'echelle5'
     unite = ''
     optionsTexte = ''
+    poleBas = ''
+    poleHaut = ''
   })
 
   const CATEGORIES: { valeur: CategorieChamp; libelle: string }[] = [
@@ -39,6 +43,7 @@
   const TYPES: { valeur: TypeChamp; libelle: string; detail: string }[] = [
     { valeur: 'echelle5', libelle: 'Échelle de 1 à 5', detail: 'Pour noter un ressenti — le plus courant.' },
     { valeur: 'nombre', libelle: 'Nombre', detail: 'Avec une unité facultative (min, verres, etc.).' },
+    { valeur: 'duree', libelle: 'Durée', detail: 'Un nombre de minutes ou d\'heures, traçable sur un graphique.' },
     { valeur: 'booleen', libelle: 'Oui / Non', detail: 'Pour une chose faite ou non faite.' },
     { valeur: 'choix', libelle: 'Choix dans une liste', detail: 'Vous définissez les options proposées.' },
     { valeur: 'texte', libelle: 'Texte libre', detail: 'Pour une note courte propre à ce suivi.' },
@@ -64,6 +69,11 @@
       type,
       unite: unite.trim() || undefined,
       options: type === 'choix' ? options : undefined,
+      // Une échelle sans ses pôles ne veut rien dire : les champs préréglés
+      // portent tous les leurs, celui-ci ne fait pas exception.
+      echelle: type === 'echelle5' && poleBas.trim() && poleHaut.trim()
+        ? { bas: poleBas.trim(), haut: poleHaut.trim() }
+        : undefined,
     })
     onfermer()
   }
@@ -100,7 +110,24 @@
       {/each}
     </fieldset>
 
-    {#if type === 'nombre'}
+    {#if type === 'echelle5'}
+      <div class="poles">
+        <div class="champ">
+          <label for="cp-pole-bas">Que veut dire 1 ? <span class="facultatif">facultatif</span></label>
+          <input id="cp-pole-bas" type="text" bind:value={poleBas} maxlength="30" placeholder="aucune" />
+        </div>
+        <div class="champ">
+          <label for="cp-pole-haut">Que veut dire 5 ?</label>
+          <input id="cp-pole-haut" type="text" bind:value={poleHaut} maxlength="30" placeholder="très forte" />
+        </div>
+      </div>
+      <p class="aide">
+        Ces deux repères s'affichent sous l'échelle au moment de la saisie. Sans eux,
+        « 3 » ne voudra plus dire grand-chose dans quelques mois.
+      </p>
+    {/if}
+
+    {#if type === 'nombre' || type === 'duree'}
       <div class="champ">
         <label for="cp-unite">Unité <span class="facultatif">facultatif</span></label>
         <input id="cp-unite" type="text" bind:value={unite} maxlength="10" placeholder="min, verres…" />
@@ -129,6 +156,8 @@
     font-size: 0.78rem; color: var(--encre-3);
     border: 1px solid var(--trait); border-radius: 999px; padding: 0.05em 0.55em;
   }
+
+  .poles { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
 
   .types { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   .types legend { font-size: 0.9rem; color: var(--encre-2); padding: 0 0 0.3rem; }

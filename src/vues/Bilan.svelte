@@ -14,7 +14,7 @@
     mensurationsActives, CLE_POIDS, CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT,
   } from '$lib/domain/champs'
   import { bilanChamp } from '$lib/domain/bilan'
-  import { serie, variationsMensuelles } from '$lib/domain/tendance'
+  import { serie, variationsMensuelles, sensEvolution } from '$lib/domain/tendance'
   import { evenementsSurPeriode } from '$lib/domain/evenements'
   import { questionDuMois } from '$lib/domain/resume'
   import { moisDe, debutDeMois, finDeMois, formaterMoisLong, versISO } from '$lib/domain/dates'
@@ -26,8 +26,14 @@
 
   /* ---------------- poids (§ 14.1) ---------------- */
 
+  const suitPoids = $derived(carnet.suitLePoids)
+  const sansChiffre = $derived(profil?.modeSansChiffre ?? false)
+
   const bilanPoids = $derived(carnet.bilanPoids)
   const objectif = $derived(carnet.objectif)
+  const sensDepuisLeDebut = $derived(
+    bilanPoids.evolution === null ? null : sensEvolution(bilanPoids.evolution),
+  )
 
   /* ---------------- mensurations (§ 14.2) ---------------- */
 
@@ -63,7 +69,15 @@
     return variations.find((v) => v.mois === cleMoisActuel)?.delta
   })
 
-  const question = $derived(questionDuMois(cleMoisActuel))
+  /**
+   * La question réellement posée quand la réponse a été écrite prime sur celle
+   * que la rotation propose aujourd'hui : la liste peut être reformulée ou
+   * traduite un jour, et une réponse ne doit jamais glisser sous une question
+   * qu'elle n'a pas eue.
+   */
+  const question = $derived(
+    carnet.reflexionDuMois(cleMoisActuel)?.question ?? questionDuMois(cleMoisActuel),
+  )
   let reponseTexte = $state('')
   let cleMoisChargee = $state('')
 
@@ -105,9 +119,30 @@
   {#if carnet.nombreMesures === 0}
     <p class="vide">Le bilan se construira au fil de vos mesures.</p>
   {:else}
-    <!-- Poids -->
+    <!-- Poids : seulement s'il est suivi (§ 3, le poids est optionnel). -->
+    {#if suitPoids}
     <section class="carte">
       <h2>Poids</h2>
+      {#if sansChiffre}
+        <!-- § 12.1 : la position et le sens, jamais la valeur. -->
+        <p class="detail">
+          {#if bilanPoids.evolution === null}
+            Une seule mesure enregistrée pour l'instant.
+          {:else if sensDepuisLeDebut === 'stable'}
+            Depuis le début de votre carnet, votre poids est stable.
+          {:else}
+            Depuis le début de votre carnet, votre poids est
+            {sensDepuisLeDebut === 'hausse' ? 'en hausse' : 'en baisse'}.
+          {/if}
+        </p>
+        {#if objectif}
+          <p class="detail">
+            {carnet.progression?.atteint
+              ? 'Vous êtes dans votre objectif.'
+              : 'Vous n\'êtes pas encore dans votre objectif.'}
+          </p>
+        {/if}
+      {:else}
       <dl class="grille-bilan">
         {#if bilanPoids.premiere}
           <div><dt>Départ</dt><dd class="nombre">{formaterNombre(masseVersAffichage(bilanPoids.premiere.valeur, unite))} {unite}</dd></div>
@@ -133,7 +168,9 @@
           <div><dt>Distance restante</dt><dd class="nombre">{formaterNombre(masseVersAffichage(carnet.progression.restant, unite))} {unite}</dd></div>
         {/if}
       </dl>
+      {/if}
     </section>
+    {/if}
 
     <!-- Mensurations -->
     {#if bilansMensurations.length > 0}
@@ -164,7 +201,7 @@
         <p class="aide">Aucune mesure ce mois-ci pour l'instant.</p>
       {:else}
         <dl class="grille-bilan">
-          {#if evolutionDuMois !== undefined}
+          {#if evolutionDuMois !== undefined && suitPoids && !sansChiffre}
             <div><dt>Évolution du poids</dt><dd class="nombre">{formaterEvolution(masseVersAffichage(evolutionDuMois, unite), 1, unite)}</dd></div>
           {/if}
           <div><dt>Mesures enregistrées</dt><dd class="nombre">{mesuresDuMois.length}</dd></div>

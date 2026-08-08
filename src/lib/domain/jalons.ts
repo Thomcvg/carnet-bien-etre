@@ -14,6 +14,7 @@
 
 import type { DateISO, Mesure, Profil } from './types'
 import { joursEntre } from './dates'
+import { porteUneObservation } from './champs'
 
 export interface Jalon {
   cle: string
@@ -37,7 +38,9 @@ export function jalonsDeRegularite(
   profil: Profil,
   aujourdhui: DateISO,
 ): Jalon[] {
-  const nombreMesures = mesures.length
+  // Les jalons parlent de régularité : seules les saisies qui portent une
+  // observation comptent, pas la taille renseignée une fois dans les paramètres.
+  const nombreMesures = mesures.filter(porteUneObservation).length
   const joursCarnet = joursDepuisCreation(profil, aujourdhui)
 
   return [

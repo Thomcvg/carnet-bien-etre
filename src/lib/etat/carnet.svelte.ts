@@ -13,7 +13,8 @@ import type {
 } from '../domain/types'
 import {
   champsParDefaut, CLE_POIDS, CLE_TAILLE, CLE_TOUR_TAILLE,
-  CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT, activerPourUsage,
+  CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT, activerPourUsage, estDernierChampActif,
+  porteUneObservation,
   creerChampPersonnalise, prochainOrdre, type NouveauChampPersonnalise,
 } from '../domain/champs'
 import { versISO } from '../domain/dates'
@@ -368,9 +369,11 @@ class EtatCarnet {
   /* ---------------- champs ---------------- */
 
   async basculerChamp(cle: string, actif: boolean): Promise<void> {
-    this.champs = this.champs.map((c) =>
-      c.cle === cle && !c.systeme ? { ...c, actif } : c,
-    )
+    // Tous les champs se désactivent, y compris le poids. Le seul refus possible
+    // est de vider entièrement le carnet de ses champs : il n'aurait alors plus
+    // de formulaire de saisie.
+    if (!actif && estDernierChampActif(this.champs, cle)) return
+    this.champs = this.champs.map((c) => (c.cle === cle ? { ...c, actif } : c))
     await this.#ecrireChamps()
   }
 
@@ -594,11 +597,29 @@ class EtatCarnet {
 
   /* ---------------- indicateurs dérivés ---------------- */
 
+  /**
+   * Le poids est un champ comme un autre : il peut être désactivé. Tout ce qui
+   * en dépend — courbe d'accueil, IMC, objectif, bilan du poids — se tait alors,
+   * au lieu d'afficher des sections vides.
+   */
+  get suitLePoids(): boolean {
+    return this.champs.some((c) => c.cle === CLE_POIDS && c.actif)
+  }
+
   get poids() { return serie(this.mesures, CLE_POIDS) }
 
   get poidsActuel(): number | undefined { return derniereValeur(this.mesures, CLE_POIDS)?.valeur }
-  get dateDerniereMesure(): string | undefined { return derniereValeur(this.mesures, CLE_POIDS)?.date }
   get poidsInitial(): number | undefined { return this.poids[0]?.valeur }
+
+  /**
+   * Date de la dernière mesure, **quel que soit le champ renseigné**.
+   * Elle se déduisait autrefois de la dernière pesée, ce qui n'a plus de sens
+   * dès lors qu'un carnet peut ne suivre que le sommeil — et n'en avait déjà
+   * pas beaucoup pour un carnet où une saisie n'avait porté que des mensurations.
+   */
+  get dateDerniereMesure(): string | undefined {
+    return this.mesures[this.mesures.length - 1]?.date
+  }
 
   get taille(): number | undefined {
     const d = this.dateDerniereMesure ?? versISO(new Date())
@@ -635,7 +656,7 @@ class EtatCarnet {
 
   get alertePerte() { return detecterPerteRapide(this.poids) }
 
-  get nombreMesures(): number { return this.mesures.length }
+  get nombreMesures(): number { return this.mesures.filter(porteUneObservation).length }
 
   get jalons() {
     const p = this.profil

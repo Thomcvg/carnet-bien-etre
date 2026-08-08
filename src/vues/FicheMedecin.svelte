@@ -58,6 +58,7 @@
     </dl>
   </section>
 
+  {#if carnet.suitLePoids && carnet.poidsActuel !== undefined}
   <section class="bloc">
     <h2>Poids</h2>
     <dl class="grille">
@@ -74,7 +75,19 @@
         <Courbe points={carnet.poids} {tendance} unite={unite} libelle="Poids" {formatDate} />
       </div>
     {/if}
+
+    {#if profil?.modeSansChiffre}
+      <!-- § 12.1 : le mode sans chiffre protège la personne de ses propres
+           chiffres, pas le médecin des siens. Cette fiche est un document remis
+           à un professionnel : elle les porte, et le dit franchement. -->
+      <p class="note-sans-chiffre sans-impression">
+        Vous avez activé le mode sans chiffre. Cette fiche étant destinée à votre
+        médecin, elle affiche les valeurs — c'est la seule page du carnet où elles
+        réapparaissent.
+      </p>
+    {/if}
   </section>
+  {/if}
 
   {#if derniereTension}
     <section class="bloc">
@@ -145,6 +158,16 @@
   .liste li { margin-bottom: 0.25rem; }
 
   .mention { font-size: 0.82rem; color: var(--encre-3); margin-top: 1.5rem; padding-top: 0.8rem; border-top: 1px solid var(--trait); }
+
+  .note-sans-chiffre {
+    margin-top: 0.9rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--bleu-voile);
+    border: 1px solid var(--bleu-trait);
+    border-radius: var(--rayon-s);
+    font-size: 0.85rem;
+    color: var(--encre-2);
+  }
 
   @media print {
     .fiche { max-width: none; }

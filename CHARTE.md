@@ -36,8 +36,14 @@ est bien écrite, bien testée, et demandée par des utilisateurs.
 
 ## Ce à quoi toute contribution doit tenir
 
-1. **Rien d'obligatoire au-delà de la date et du poids.** Toute nouvelle donnée est
-   facultative et désactivée par défaut (§ 3 et § 20).
+1. **Rien d'obligatoire au-delà de la date.** Toute donnée est facultative et
+   désactivée par défaut (§ 3 et § 20) — **y compris le poids**, qui se désactive
+   comme n'importe quel autre champ. Suivre uniquement son sommeil, son niveau de
+   stress ou ses douleurs est un usage à part entière. Faire du poids la seule
+   donnée obligatoire revenait à en faire la mesure d'une personne, ce que la
+   première phrase de cette charte refuse. Le seul champ qu'on refuse de
+   désactiver est le dernier encore actif, quel qu'il soit : un carnet sans aucun
+   champ n'aurait plus de formulaire de saisie.
 2. **Une donnée absente n'est jamais zéro**, jamais interpolée, jamais traitée comme
    une erreur (règle 5).
 3. **Aucun calcul ne s'affiche sans ses données sources** (règle 14).

@@ -5,25 +5,21 @@ describe('calculerRepereActivite', () => {
   it('ne calcule rien sans donnée (règle 14)', () => {
     const r = calculerRepereActivite(undefined, undefined)
     expect(r.pourcentCible).toBeNull()
-    expect(r.atteint).toBe(false)
   })
 
-  it('atteint le repère OMS à 150 minutes', () => {
+  it('situe la saisie à 100 % du repère OMS à 150 minutes', () => {
     const r = calculerRepereActivite(150)
-    expect(r.atteint).toBe(true)
     expect(r.pourcentCible).toBe(100)
   })
 
   it('reste sous 100 % avant le repère', () => {
     const r = calculerRepereActivite(75)
     expect(r.pourcentCible).toBe(50)
-    expect(r.atteint).toBe(false)
   })
 
   it('borne l\'affichage à 100 % au-delà du repère', () => {
     const r = calculerRepereActivite(300)
     expect(r.pourcentCible).toBe(100)
-    expect(r.atteint).toBe(true)
   })
 
   it('ignore une valeur négative plutôt que d\'afficher un pourcentage absurde', () => {

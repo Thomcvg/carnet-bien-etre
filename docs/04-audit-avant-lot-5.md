@@ -7,8 +7,9 @@ gêne l'usage.
 
 Chaque constat indique le fichier, ce qui se passe, et pourquoi cela compte.
 
-> **État au 9 août 2026.** Les parties 1 à 4 sont **corrigées** (détail en partie 6).
-> La partie 7 rassemble les constats de la seconde passe, non corrigés à ce jour.
+> **État au 9 août 2026.** Les parties 1 à 4 (première passe) et 7 (seconde passe)
+> sont **corrigées**. Les décisions de conception prises en chemin sont en partie 9,
+> avec le chantier qu'elles ont ouvert : **rendre le poids optionnel**.
 
 ---
 
@@ -473,12 +474,89 @@ Afficher `reflexion.question` quand une réponse existe suffit à fermer le suje
 
 ---
 
-## 8. Ce qui reste à faire
+## 8. Décisions prises sur la seconde passe
 
-1. **7.1 — le mode sans chiffre.** Le seul point qui touche à un engagement de la
-   charte, et le seul qui demande une décision de conception.
-2. **7.2 et 7.3** — deux libellés qui promettent plus que le code ne tient.
-3. **7.4, 7.5, 7.6** — la finition.
-4. **Un test qui traverse la couture domaine ↔ interface.** Le bug des livres a
+### 8.1 — Le mode sans chiffre s'applique partout, sauf sur la fiche médecin
+
+Le réglage annonce « masque les valeurs de poids » : il masque donc **les valeurs
+de poids**, et rien d'autre. Une note de sommeil ou un tour de taille restent
+lisibles — ils ne portent pas la charge qui justifie ce mode.
+
+Concrètement, le poids ne s'affiche plus jamais comme un nombre :
+
+| Écran | Ce qui s'affiche à la place |
+|---|---|
+| Accueil | « en baisse depuis le début » (déjà le cas) |
+| Historique | « en baisse » / « en hausse » / « stable », face à la mesure précédente |
+| Bilan | une phrase de position, plus aucun tableau de valeurs |
+| Graphiques | la courbe garde sa forme, l'axe perd ses graduations, les écarts mensuels deviennent des sens |
+
+Deux exceptions assumées :
+
+- **La fiche pour le médecin garde les chiffres.** Elle est faite pour être
+  imprimée et remise à un professionnel, à qui les valeurs sont nécessaires. Un
+  encadré à l'écran (invisible à l'impression) le signale à la personne.
+- **Les exports gardent les chiffres.** Un export amputé ne serait plus une
+  sauvegarde, et la portabilité des données prime (§ 11.2).
+
+La courbe conserve aussi sa **table alternative** pour les lecteurs d'écran, mais
+sa colonne de valeurs devient une colonne d'évolutions : sans cela, le mode se
+contournait en tabulant.
+
+### 8.2 — Les échelles 1 à 5 deviennent traçables
+
+Découvert en vérifiant un carnet sans poids : l'écran Graphiques ne retenait que
+les champs `nombre`. Un carnet qui ne suit que le stress n'avait donc **aucune
+courbe** — ce qui vide l'application de son intérêt pour cette personne. Les
+échelles s'y ajoutent, au même titre que les durées.
+
+Dans la foulée, le champ affiché par défaut n'est plus le premier de la liste mais
+**le premier qui porte des données** : l'écran s'ouvrait sinon sur une courbe vide
+alors qu'un autre champ, juste en dessous, avait tout son historique.
+
+---
+
+## 9. Le poids devient une donnée comme une autre
+
+Demandé en cours d'audit, et de loin le changement le plus structurant.
+
+**Ce qui existait :** `DefinitionChamp.systeme` marquait le poids comme « ni
+désactivable, ni supprimable ». Sa case était grisée dans les paramètres, et le
+formulaire refusait d'enregistrer une mesure sans lui.
+
+**Le problème :** cela contredisait deux promesses à la fois. Le § 3 décrit un
+moteur où tous les champs sont de même nature ; la charte refuse de faire du poids
+la mesure d'une personne. Faire du poids le seul champ obligatoire était
+exactement cela, inscrit dans le typage.
+
+**Ce qui a changé :**
+
+- `systeme` est **supprimé** du modèle. Aucun champ n'est privilégié.
+- L'invariant qui le remplace est plus juste : un carnet garde **au moins un champ
+  actif**, quel qu'il soit (`estDernierChampActif`). Si la seule donnée suivie est
+  « Stress », c'est elle qu'on refusera de décocher.
+- Une mesure valide demande une date et **au moins une valeur**, plus un poids.
+- La date de dernière mesure ne se déduit plus de la dernière pesée mais de la
+  dernière saisie, quel qu'en soit le contenu — ce qui était déjà faux pour un
+  carnet dont une saisie n'avait porté que des mensurations.
+- Sans poids suivi, l'accueil présente le dernier relevé et ses valeurs ; la
+  progression, la courbe de poids, les repères d'IMC et le bilan du poids se
+  taisent au lieu d'afficher des sections vides.
+- Le formulaire ouvre la première section utile, faute de champ en tête.
+
+**La charte a été modifiée en conséquence** : sa règle 1 disait « rien
+d'obligatoire au-delà de la date **et du poids** ».
+
+---
+
+## 10. Ce qui reste à faire
+
+1. **Un test qui traverse la couture domaine ↔ interface.** Le bug des livres a
    survécu à 160 tests verts parce que rien n'exerçait le formulaire lui-même.
    C'est la leçon des deux passes, et elle n'est toujours pas tirée.
+2. **Une courbe à un seul point affiche des graduations répétées** (« 4, 4, 4, 4,
+   5 »), l'échelle se resserrant autour de l'unique valeur. Sans gravité, visible.
+3. **Le bilan ne résume que le poids et les mensurations.** Un carnet d'échelles
+   n'y trouve qu'un décompte de mesures — il mériterait le même traitement.
+4. **`contextePesee`** (à jeun, habillé…) reste typé et transporté sans être
+   proposé à la saisie. Il n'est plus effacé, mais toujours pas offert.

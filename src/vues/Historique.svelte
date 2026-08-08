@@ -14,13 +14,11 @@
   import EvenementModale from './EvenementModale.svelte'
   import { carnet } from '$lib/etat/carnet.svelte'
   import { formaterDate } from '$lib/domain/dates'
-  import { formaterNombre, masseVersAffichage } from '$lib/domain/unites'
   import { champsActifs, CLE_POIDS } from '$lib/domain/champs'
   import { comparerMesures } from '$lib/domain/tendance'
   import { libelleType } from '$lib/domain/evenements'
-  import {
-    lireNombre, lireTexte, lireBooleen, lireTension, lireChoixMultiple,
-  } from '$lib/domain/types'
+  import { formaterValeurChamp } from '$lib/domain/valeurs'
+  import { lireNombre } from '$lib/domain/types'
   import type { DefinitionChamp, Mesure } from '$lib/domain/types'
 
   interface Props { onmodifier: (id: string) => void }
@@ -33,6 +31,7 @@
   const profil = $derived(carnet.profil)
   const formatDate = $derived(profil?.formatDate ?? 'jj/mm/aaaa')
   const unite = $derived(profil?.uniteMasse ?? 'kg')
+  const sansChiffre = $derived(profil?.modeSansChiffre ?? false)
 
   const recentes = $derived([...carnet.mesures].sort((a, b) => comparerMesures(b, a)))
   const evenementsRecents = $derived([...carnet.evenements].sort((a, b) => b.dateDebut.localeCompare(a.dateDebut)))
@@ -40,49 +39,34 @@
 
   interface ValeurAffichee { champ: DefinitionChamp; texte: string }
 
+  /**
+   * Poids de la mesure qui précède chronologiquement, par identifiant de mesure.
+   * Sert au mode sans chiffre : sans valeur à montrer, on montre un sens.
+   */
+  const poidsPrecedents = $derived.by(() => {
+    const table = new Map<string, number>()
+    let precedent: number | undefined
+    // `carnet.mesures` est trié du plus ancien au plus récent.
+    for (const m of carnet.mesures) {
+      const v = lireNombre(m, CLE_POIDS)
+      if (v === undefined) continue
+      if (precedent !== undefined) table.set(m.id, precedent)
+      precedent = v
+    }
+    return table
+  })
+
   function valeursDe(mesure: Mesure): ValeurAffichee[] {
     const sortie: ValeurAffichee[] = []
     for (const champ of champs) {
-      const texte = formaterValeur(champ, mesure)
+      const texte = formaterValeurChamp(champ, mesure, {
+        uniteMasse: unite,
+        sansChiffre,
+        poidsPrecedent: poidsPrecedents.get(mesure.id),
+      })
       if (texte !== undefined) sortie.push({ champ, texte })
     }
     return sortie
-  }
-
-  function formaterValeur(champ: DefinitionChamp, mesure: Mesure): string | undefined {
-    switch (champ.type) {
-      case 'nombre':
-      case 'duree': {
-        const v = lireNombre(mesure, champ.cle)
-        if (v === undefined) return undefined
-        if (champ.cle === CLE_POIDS) return `${formaterNombre(masseVersAffichage(v, unite))} ${unite}`
-        return champ.unite ? `${formaterNombre(v)} ${champ.unite}` : formaterNombre(v)
-      }
-      case 'echelle5': {
-        const v = lireNombre(mesure, champ.cle)
-        return v === undefined ? undefined : `${v} / 5`
-      }
-      case 'booleen': {
-        const v = lireBooleen(mesure, champ.cle)
-        return v === undefined ? undefined : (v ? 'Oui' : 'Non')
-      }
-      case 'choix': {
-        if (champ.multiple) {
-          const v = lireChoixMultiple(mesure, champ.cle)
-          return v === undefined ? undefined : v.join(', ')
-        }
-        return lireTexte(mesure, champ.cle)
-      }
-      case 'texte':
-        return lireTexte(mesure, champ.cle)
-      case 'tension': {
-        const v = lireTension(mesure, champ.cle)
-        if (v === undefined) return undefined
-        return v.pouls !== undefined ? `${v.sys}/${v.dia} mmHg, ${v.pouls} bpm` : `${v.sys}/${v.dia} mmHg`
-      }
-      default:
-        return undefined
-    }
   }
 
   async function confirmerSuppression() {

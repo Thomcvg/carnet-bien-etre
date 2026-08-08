@@ -12,7 +12,9 @@
   import { formaterEvolution, formaterNombre, masseVersAffichage } from '$lib/domain/unites'
   import { formaterImc } from '$lib/domain/imc'
   import { moyenneMobile, sensEvolution, BANDE_INCERTITUDE_KG } from '$lib/domain/tendance'
-  import type { TypeObjectif } from '$lib/domain/types'
+  import { champsActifs } from '$lib/domain/champs'
+  import { formaterValeurChamp } from '$lib/domain/valeurs'
+  import type { DefinitionChamp, TypeObjectif } from '$lib/domain/types'
 
   interface Props {
     onnouvelleMesure: () => void
@@ -28,6 +30,24 @@
 
   const m = (kg: number | undefined) =>
     kg === undefined ? '—' : formaterNombre(masseVersAffichage(kg, unite))
+
+  const suitPoids = $derived(carnet.suitLePoids)
+
+  /**
+   * Sans poids à mettre en tête, l'écran présente les dernières valeurs relevées,
+   * quelles qu'elles soient — un carnet de sommeil ou de stress est un carnet à
+   * part entière.
+   */
+  const dernieresValeurs = $derived.by(() => {
+    const derniere = carnet.mesures[carnet.mesures.length - 1]
+    if (!derniere) return []
+    return champsActifs(carnet.champs)
+      .map((champ) => ({
+        champ,
+        texte: formaterValeurChamp(champ, derniere, { uniteMasse: unite, sansChiffre }),
+      }))
+      .filter((v): v is { champ: DefinitionChamp; texte: string } => v.texte !== undefined)
+  })
 
   const bilan = $derived(carnet.bilanPoids)
   const progression = $derived(carnet.progression)
@@ -81,7 +101,11 @@
 
       <div class="tete">
         <div class="principal">
-          {#if sansChiffre}
+          {#if !suitPoids}
+            <!-- Le poids n'est pas suivi (§ 3 : c'est un champ comme un autre).
+                 La tête de l'écran présente alors le dernier relevé, quel qu'il soit. -->
+            <p class="valeur-mot">Dernier relevé</p>
+          {:else if sansChiffre}
             <p class="valeur-mot">{sens ? motEvolution[sens] : 'première mesure enregistrée'}</p>
           {:else}
             <p class="valeur nombre">{m(carnet.poidsActuel)}<span class="unite">{unite}</span></p>
@@ -98,7 +122,15 @@
         </button>
       </div>
 
-      {#if !sansChiffre}
+      {#if !suitPoids}
+        {#if dernieresValeurs.length > 0}
+          <dl class="chiffres">
+            {#each dernieresValeurs as v (v.champ.cle)}
+              <div><dt>{v.champ.libelle}</dt><dd class="nombre">{v.texte}</dd></div>
+            {/each}
+          </dl>
+        {/if}
+      {:else if !sansChiffre}
         <dl class="chiffres">
           <div>
             <dt>Départ</dt>
@@ -132,7 +164,8 @@
       {/if}
     </section>
 
-    <!-- Progression -->
+    <!-- Progression et courbe : n'ont de sens que si le poids est suivi. -->
+    {#if suitPoids}
     <section class="carte" aria-labelledby="titre-progression">
       <h2 id="titre-progression">Progression</h2>
       {#if carnet.objectif && progression}
@@ -176,8 +209,10 @@
         unite={unite}
         libelle="Poids"
         {formatDate}
+        masquerValeurs={sansChiffre}
       />
     </section>
+    {/if}
 
     <!-- Repères de santé -->
     {#if lecture}

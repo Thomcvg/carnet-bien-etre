@@ -18,10 +18,21 @@
  * saisies, puisque la clé du champ ne change pas.
  */
 
-import type { DefinitionChamp, TypeChamp, CategorieChamp, UniteChamp, UsageDeclare } from './types'
+import type {
+  DefinitionChamp, Mesure, TypeChamp, CategorieChamp, UniteChamp, UsageDeclare,
+} from './types'
 import { masseVersAffichage, type UniteMasse } from './unites'
 
-/** Le poids est le seul champ système : ni désactivable, ni supprimable. */
+/**
+ * Le poids est le champ central du carnet, et il est **désactivable comme les
+ * autres**. Quelqu'un qui ne veut suivre que son sommeil ou son niveau de stress
+ * doit pouvoir le faire : le § 3 promet un moteur où tous les champs sont de même
+ * nature, et privilégier le poids par le code contredisait cette promesse autant
+ * que la charte, qui refuse de faire du poids la mesure d'une personne.
+ *
+ * L'invariant qui remplace l'ancien « champ système » est ailleurs, et il est plus
+ * juste : un carnet doit garder **au moins un champ actif** (voir `basculerChamp`).
+ */
 export const CLE_POIDS = 'poids'
 export const CLE_TAILLE = 'taille'
 export const CLE_TOUR_TAILLE = 'tour_taille'
@@ -37,65 +48,65 @@ export const CLE_RENFORCEMENT = 'renforcement'
 type Prereglage = Omit<DefinitionChamp, 'personnalise'>
 
 const CORPS: Prereglage[] = [
-  { cle: CLE_POIDS, libelle: 'Poids', categorie: 'corps', type: 'nombre', unite: 'kg', min: 20, max: 400, pas: 0.1, actif: true, ordre: 10, systeme: true },
-  { cle: CLE_TAILLE, libelle: 'Taille', categorie: 'corps', type: 'nombre', unite: 'cm', min: 50, max: 250, pas: 0.5, actif: true, ordre: 20, systeme: false },
+  { cle: CLE_POIDS, libelle: 'Poids', categorie: 'corps', type: 'nombre', unite: 'kg', min: 20, max: 400, pas: 0.1, actif: true, ordre: 10 },
+  { cle: CLE_TAILLE, libelle: 'Taille', categorie: 'corps', type: 'nombre', unite: 'cm', min: 50, max: 250, pas: 0.5, actif: true, ordre: 20 },
 
-  { cle: 'tour_poitrine', libelle: 'Tour de poitrine', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 30, systeme: false },
-  { cle: CLE_TOUR_TAILLE, libelle: 'Tour de taille', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 40, systeme: false },
-  { cle: 'tour_ventre', libelle: 'Tour de ventre', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 50, systeme: false },
-  { cle: 'tour_hanches', libelle: 'Tour de hanches', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 60, systeme: false },
-  { cle: 'tour_cuisse', libelle: 'Tour de cuisse', categorie: 'corps', type: 'nombre', unite: 'cm', min: 20, max: 120, pas: 0.5, actif: true, ordre: 70, systeme: false },
-  { cle: 'tour_bras', libelle: 'Tour de bras', categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 90, pas: 0.5, actif: true, ordre: 80, systeme: false },
+  { cle: 'tour_poitrine', libelle: 'Tour de poitrine', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 30 },
+  { cle: CLE_TOUR_TAILLE, libelle: 'Tour de taille', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 40 },
+  { cle: 'tour_ventre', libelle: 'Tour de ventre', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 50 },
+  { cle: 'tour_hanches', libelle: 'Tour de hanches', categorie: 'corps', type: 'nombre', unite: 'cm', min: 30, max: 200, pas: 0.5, actif: true, ordre: 60 },
+  { cle: 'tour_cuisse', libelle: 'Tour de cuisse', categorie: 'corps', type: 'nombre', unite: 'cm', min: 20, max: 120, pas: 0.5, actif: true, ordre: 70 },
+  { cle: 'tour_bras', libelle: 'Tour de bras', categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 90, pas: 0.5, actif: true, ordre: 80 },
 
-  { cle: 'tour_cou', libelle: 'Tour de cou', categorie: 'corps', type: 'nombre', unite: 'cm', min: 20, max: 80, pas: 0.5, actif: false, ordre: 90, systeme: false },
-  { cle: 'tour_mollet', libelle: 'Tour de mollet', categorie: 'corps', type: 'nombre', unite: 'cm', min: 15, max: 80, pas: 0.5, actif: false, ordre: 100, systeme: false },
-  { cle: 'tour_avant_bras', libelle: "Tour d'avant-bras", categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 60, pas: 0.5, actif: false, ordre: 110, systeme: false },
-  { cle: 'tour_epaules', libelle: "Tour d'épaules", categorie: 'corps', type: 'nombre', unite: 'cm', min: 60, max: 200, pas: 0.5, actif: false, ordre: 120, systeme: false },
-  { cle: 'tour_poignet', libelle: 'Tour de poignet', categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 30, pas: 0.5, actif: false, ordre: 130, systeme: false },
-  { cle: 'tour_cheville', libelle: 'Tour de cheville', categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 50, pas: 0.5, actif: false, ordre: 140, systeme: false },
+  { cle: 'tour_cou', libelle: 'Tour de cou', categorie: 'corps', type: 'nombre', unite: 'cm', min: 20, max: 80, pas: 0.5, actif: false, ordre: 90 },
+  { cle: 'tour_mollet', libelle: 'Tour de mollet', categorie: 'corps', type: 'nombre', unite: 'cm', min: 15, max: 80, pas: 0.5, actif: false, ordre: 100 },
+  { cle: 'tour_avant_bras', libelle: "Tour d'avant-bras", categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 60, pas: 0.5, actif: false, ordre: 110 },
+  { cle: 'tour_epaules', libelle: "Tour d'épaules", categorie: 'corps', type: 'nombre', unite: 'cm', min: 60, max: 200, pas: 0.5, actif: false, ordre: 120 },
+  { cle: 'tour_poignet', libelle: 'Tour de poignet', categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 30, pas: 0.5, actif: false, ordre: 130 },
+  { cle: 'tour_cheville', libelle: 'Tour de cheville', categorie: 'corps', type: 'nombre', unite: 'cm', min: 10, max: 50, pas: 0.5, actif: false, ordre: 140 },
 
-  { cle: 'taille_vetement', libelle: 'Taille de vêtement', categorie: 'corps', type: 'texte', actif: false, ordre: 150, systeme: false },
-  { cle: 'pointure', libelle: 'Pointure', categorie: 'corps', type: 'nombre', min: 15, max: 60, pas: 0.5, actif: false, ordre: 160, systeme: false },
+  { cle: 'taille_vetement', libelle: 'Taille de vêtement', categorie: 'corps', type: 'texte', actif: false, ordre: 150 },
+  { cle: 'pointure', libelle: 'Pointure', categorie: 'corps', type: 'nombre', min: 15, max: 60, pas: 0.5, actif: false, ordre: 160 },
 ]
 
 const SANTE: Prereglage[] = [
-  { cle: 'tension', libelle: 'Tension artérielle', categorie: 'sante', type: 'tension', unite: 'mmHg', actif: false, ordre: 10, systeme: false },
+  { cle: 'tension', libelle: 'Tension artérielle', categorie: 'sante', type: 'tension', unite: 'mmHg', actif: false, ordre: 10 },
 ]
 
 const BIENETRE: Prereglage[] = [
-  { cle: 'sommeil_qualite', libelle: 'Qualité du sommeil', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très mauvaise', haut: 'très bonne' }, actif: false, ordre: 10, systeme: false },
-  { cle: 'sommeil_duree', libelle: 'Durée de sommeil', categorie: 'bienetre', type: 'duree', unite: 'h', min: 0, max: 16, pas: 0.5, actif: false, ordre: 20, systeme: false },
-  { cle: 'energie', libelle: 'Énergie', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'au plus bas', haut: 'au plus haut' }, actif: false, ordre: 30, systeme: false },
-  { cle: 'humeur', libelle: 'Humeur', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très basse', haut: 'très bonne' }, actif: false, ordre: 40, systeme: false },
-  { cle: 'stress', libelle: 'Stress', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucun', haut: 'très fort' }, actif: false, ordre: 50, systeme: false },
-  { cle: 'douleurs', libelle: 'Douleurs', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucune', haut: 'très fortes' }, actif: false, ordre: 60, systeme: false },
-  { cle: 'motivation', libelle: 'Motivation', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très faible', haut: 'très forte' }, actif: false, ordre: 70, systeme: false },
-  { cle: 'confiance', libelle: 'Confiance en soi', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très faible', haut: 'très forte' }, actif: false, ordre: 80, systeme: false },
-  { cle: 'essoufflement', libelle: 'Essoufflement à l\'effort', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucun', haut: 'important' }, actif: false, ordre: 90, systeme: false },
-  { cle: 'digestion', libelle: 'Confort digestif', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très inconfortable', haut: 'très confortable' }, actif: false, ordre: 100, systeme: false },
+  { cle: 'sommeil_qualite', libelle: 'Qualité du sommeil', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très mauvaise', haut: 'très bonne' }, actif: false, ordre: 10 },
+  { cle: 'sommeil_duree', libelle: 'Durée de sommeil', categorie: 'bienetre', type: 'duree', unite: 'h', min: 0, max: 16, pas: 0.5, actif: false, ordre: 20 },
+  { cle: 'energie', libelle: 'Énergie', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'au plus bas', haut: 'au plus haut' }, actif: false, ordre: 30 },
+  { cle: 'humeur', libelle: 'Humeur', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très basse', haut: 'très bonne' }, actif: false, ordre: 40 },
+  { cle: 'stress', libelle: 'Stress', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucun', haut: 'très fort' }, actif: false, ordre: 50 },
+  { cle: 'douleurs', libelle: 'Douleurs', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucune', haut: 'très fortes' }, actif: false, ordre: 60 },
+  { cle: 'motivation', libelle: 'Motivation', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très faible', haut: 'très forte' }, actif: false, ordre: 70 },
+  { cle: 'confiance', libelle: 'Confiance en soi', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très faible', haut: 'très forte' }, actif: false, ordre: 80 },
+  { cle: 'essoufflement', libelle: 'Essoufflement à l\'effort', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucun', haut: 'important' }, actif: false, ordre: 90 },
+  { cle: 'digestion', libelle: 'Confort digestif', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très inconfortable', haut: 'très confortable' }, actif: false, ordre: 100 },
   // Seule échelle dont aucune extrémité n'est souhaitable : c'est le milieu qui l'est.
-  { cle: 'transit', libelle: 'Transit', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très ralenti', haut: 'très accéléré' }, actif: false, ordre: 110, systeme: false },
-  { cle: 'hydratation', libelle: 'Hydratation', categorie: 'bienetre', type: 'nombre', unite: 'verres', min: 0, max: 20, pas: 1, actif: false, ordre: 120, systeme: false },
-  { cle: 'fringales', libelle: 'Fringales', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucune', haut: 'très fréquentes' }, actif: false, ordre: 130, systeme: false },
+  { cle: 'transit', libelle: 'Transit', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'très ralenti', haut: 'très accéléré' }, actif: false, ordre: 110 },
+  { cle: 'hydratation', libelle: 'Hydratation', categorie: 'bienetre', type: 'nombre', unite: 'verres', min: 0, max: 20, pas: 1, actif: false, ordre: 120 },
+  { cle: 'fringales', libelle: 'Fringales', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'aucune', haut: 'très fréquentes' }, actif: false, ordre: 130 },
   // Renommé : « Faim et satiété » nommait deux sensations opposées sur une seule
   // échelle — noter 3 pouvait vouloir dire « moyennement affamée » ou « moyennement
   // rassasiée ». Une échelle, une seule sensation, deux extrémités explicites.
-  { cle: 'satiete', libelle: 'Sensation de satiété', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'rarement rassasié', haut: 'facilement rassasié' }, actif: false, ordre: 140, systeme: false },
-  { cle: 'menopause', libelle: 'Symptômes de ménopause', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'absents', haut: 'très présents' }, actif: false, ordre: 150, systeme: false },
-  { cle: 'cycle', libelle: 'Cycle menstruel', categorie: 'bienetre', type: 'choix', options: ['Règles', 'Prémenstruel', 'Ovulation', 'Autre'], actif: false, ordre: 160, systeme: false },
-  { cle: 'alcool', libelle: 'Alcool', categorie: 'bienetre', type: 'nombre', unite: 'verres', min: 0, max: 30, pas: 1, actif: false, ordre: 170, systeme: false },
-  { cle: 'tabac', libelle: 'Tabac', categorie: 'bienetre', type: 'nombre', min: 0, max: 60, pas: 1, actif: false, ordre: 180, systeme: false },
-  { cle: 'cafeine', libelle: 'Caféine', categorie: 'bienetre', type: 'nombre', min: 0, max: 15, pas: 1, actif: false, ordre: 190, systeme: false },
+  { cle: 'satiete', libelle: 'Sensation de satiété', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'rarement rassasié', haut: 'facilement rassasié' }, actif: false, ordre: 140 },
+  { cle: 'menopause', libelle: 'Symptômes de ménopause', categorie: 'bienetre', type: 'echelle5', echelle: { bas: 'absents', haut: 'très présents' }, actif: false, ordre: 150 },
+  { cle: 'cycle', libelle: 'Cycle menstruel', categorie: 'bienetre', type: 'choix', options: ['Règles', 'Prémenstruel', 'Ovulation', 'Autre'], actif: false, ordre: 160 },
+  { cle: 'alcool', libelle: 'Alcool', categorie: 'bienetre', type: 'nombre', unite: 'verres', min: 0, max: 30, pas: 1, actif: false, ordre: 170 },
+  { cle: 'tabac', libelle: 'Tabac', categorie: 'bienetre', type: 'nombre', min: 0, max: 60, pas: 1, actif: false, ordre: 180 },
+  { cle: 'cafeine', libelle: 'Caféine', categorie: 'bienetre', type: 'nombre', min: 0, max: 15, pas: 1, actif: false, ordre: 190 },
 ]
 
 const ACTIVITE: Prereglage[] = [
-  { cle: 'activite_type', libelle: "Type d'activité", categorie: 'activite', type: 'choix', options: ['Marche', 'Natation', 'Vélo', 'Renforcement', 'Yoga', 'Autre'], actif: false, ordre: 10, systeme: false },
-  { cle: 'activite_duree', libelle: "Durée d'activité", categorie: 'activite', type: 'duree', unite: 'min', min: 0, max: 600, pas: 5, actif: false, ordre: 20, systeme: false },
-  { cle: 'activite_intensite', libelle: 'Intensité', categorie: 'activite', type: 'echelle5', echelle: { bas: 'très douce', haut: 'très soutenue' }, actif: false, ordre: 30, systeme: false },
-  { cle: 'activite_quotidien', libelle: 'Activité du quotidien', categorie: 'activite', type: 'choix', multiple: true, options: ['Jardinage', 'Ménage', 'Courses', 'Escaliers', 'Bricolage'], actif: false, ordre: 40, systeme: false },
-  { cle: 'renforcement', libelle: 'Renforcement musculaire', categorie: 'activite', type: 'booleen', actif: false, ordre: 50, systeme: false },
-  { cle: 'distance', libelle: 'Distance parcourue', categorie: 'activite', type: 'nombre', unite: 'km', min: 0, max: 200, pas: 0.1, actif: false, ordre: 60, systeme: false },
-  { cle: 'pas', libelle: 'Nombre de pas', categorie: 'activite', type: 'nombre', unite: 'pas', min: 0, max: 100_000, pas: 100, actif: false, ordre: 70, systeme: false },
+  { cle: 'activite_type', libelle: "Type d'activité", categorie: 'activite', type: 'choix', options: ['Marche', 'Natation', 'Vélo', 'Renforcement', 'Yoga', 'Autre'], actif: false, ordre: 10 },
+  { cle: 'activite_duree', libelle: "Durée d'activité", categorie: 'activite', type: 'duree', unite: 'min', min: 0, max: 600, pas: 5, actif: false, ordre: 20 },
+  { cle: 'activite_intensite', libelle: 'Intensité', categorie: 'activite', type: 'echelle5', echelle: { bas: 'très douce', haut: 'très soutenue' }, actif: false, ordre: 30 },
+  { cle: 'activite_quotidien', libelle: 'Activité du quotidien', categorie: 'activite', type: 'choix', multiple: true, options: ['Jardinage', 'Ménage', 'Courses', 'Escaliers', 'Bricolage'], actif: false, ordre: 40 },
+  { cle: 'renforcement', libelle: 'Renforcement musculaire', categorie: 'activite', type: 'booleen', actif: false, ordre: 50 },
+  { cle: 'distance', libelle: 'Distance parcourue', categorie: 'activite', type: 'nombre', unite: 'km', min: 0, max: 200, pas: 0.1, actif: false, ordre: 60 },
+  { cle: 'pas', libelle: 'Nombre de pas', categorie: 'activite', type: 'nombre', unite: 'pas', min: 0, max: 100_000, pas: 100, actif: false, ordre: 70 },
 ]
 
 /** Catalogue livré à la création d'un carnet, toutes catégories confondues. */
@@ -128,6 +139,32 @@ export function champsDeCategorie(
   categorie: DefinitionChamp['categorie'],
 ): DefinitionChamp[] {
   return champs.filter((c) => c.categorie === categorie).sort((a, b) => a.ordre - b.ordre)
+}
+
+/**
+ * Vrai si ce champ est le dernier encore actif du carnet.
+ *
+ * C'est le seul motif de refus d'une désactivation, et il ne dit rien de la
+ * nature du champ : un carnet sans aucun champ actif n'aurait plus de formulaire
+ * de saisie, donc plus rien à enregistrer. Le poids n'a aucun privilège ici — si
+ * le seul champ suivi est « Stress », c'est lui qu'on refusera de décocher.
+ */
+export function estDernierChampActif(champs: DefinitionChamp[], cle: string): boolean {
+  const actifs = champs.filter((c) => c.actif)
+  return actifs.length === 1 && actifs[0]?.cle === cle
+}
+
+/**
+ * Vrai si la mesure porte au moins une observation, c'est-à-dire autre chose
+ * que la seule taille.
+ *
+ * Renseigner sa taille depuis les paramètres crée une mesure datée qui ne porte
+ * qu'elle : c'est une donnée de gabarit, saisie une fois puis oubliée, pas un
+ * relevé. La compter comme une saisie flatterait la régularité affichée et
+ * gonflerait le nombre de mesures sans que personne ait rien relevé.
+ */
+export function porteUneObservation(mesure: Mesure): boolean {
+  return Object.keys(mesure.valeurs).some((cle) => cle !== CLE_TAILLE)
 }
 
 export function trouverChamp(
@@ -250,6 +287,8 @@ export interface NouveauChampPersonnalise {
   min?: number
   max?: number
   options?: string[]
+  /** Sens des extrémités, pour un champ de type `echelle5`. */
+  echelle?: { bas: string; haut: string }
 }
 
 /**
@@ -273,9 +312,9 @@ export function creerChampPersonnalise(
     min: saisie.min,
     max: saisie.max,
     options: saisie.options,
+    echelle: saisie.echelle,
     actif: true,
     ordre,
-    systeme: false,
     personnalise: true,
   }
 }

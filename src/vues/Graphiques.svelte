@@ -12,7 +12,9 @@
   import CourbeComparaison from '../composants/CourbeComparaison.svelte'
   import { carnet } from '$lib/etat/carnet.svelte'
   import { champsActifs, mensurationsActives, CLE_POIDS } from '$lib/domain/champs'
-  import { moyenneMobile, serie, variationsMensuelles, BANDE_INCERTITUDE_KG } from '$lib/domain/tendance'
+  import {
+    moyenneMobile, serie, variationsMensuelles, sensEvolution, BANDE_INCERTITUDE_KG,
+  } from '$lib/domain/tendance'
   import { formaterMoisLong, versISO } from '$lib/domain/dates'
   import { formaterEvolution, masseVersAffichage } from '$lib/domain/unites'
 
@@ -27,15 +29,36 @@
   const profil = $derived(carnet.profil)
   const unite = $derived(profil?.uniteMasse ?? 'kg')
   const formatDate = $derived(profil?.formatDate ?? 'jj/mm/aaaa')
+  const sansChiffre = $derived(profil?.modeSansChiffre ?? false)
 
-  // `duree` est un nombre partout ailleurs (historique, repères de saisie, export) :
-  // l'exclure ici privait de courbe la durée de sommeil et la durée d'activité.
+  /**
+   * Tout ce qui se stocke comme un nombre se trace.
+   *
+   * `duree` en faisait déjà partie partout ailleurs (historique, repères de
+   * saisie, export) et manquait ici. `echelle5` aussi : une note de 1 à 5 suivie
+   * mois après mois est une courbe parfaitement lisible — et c'est même la seule
+   * qu'aurait quelqu'un qui ne suit que son sommeil ou son stress, le poids étant
+   * désormais optionnel.
+   */
   const champsNumeriques = $derived(
-    champsActifs(carnet.champs).filter((c) => c.type === 'nombre' || c.type === 'duree'),
+    champsActifs(carnet.champs).filter(
+      (c) => c.type === 'nombre' || c.type === 'duree' || c.type === 'echelle5',
+    ),
   )
   const mensurations = $derived(mensurationsActives(carnet.champs))
 
-  const champ = $derived(champsNumeriques.find((c) => c.cle === champChoisi) ?? champsNumeriques[0])
+  /**
+   * Le champ affiché : celui choisi, sinon le premier qui porte réellement des
+   * données. Retomber bêtement sur le premier de la liste ouvrait l'écran sur
+   * une courbe vide alors qu'un autre champ, juste en dessous, avait un an
+   * d'historique — d'autant plus visible depuis que le poids n'est plus le
+   * défaut garanti.
+   */
+  const champ = $derived(
+    champsNumeriques.find((c) => c.cle === champChoisi)
+    ?? champsNumeriques.find((c) => serie(carnet.mesures, c.cle).length > 0)
+    ?? champsNumeriques[0],
+  )
 
   const MOIS: Record<Periode, number | null> = { '3m': 3, '6m': 6, '1a': 12, tout: null }
 
@@ -84,6 +107,12 @@
   )
 
   function afficherDelta(delta: number): string {
+    // § 12.1 : un écart mensuel chiffré est exactement ce que le mode sans
+    // chiffre cherche à éviter — on en garde le sens, pas la valeur.
+    if (estPoids && sansChiffre) {
+      if (sensEvolution(delta) === 'stable') return 'stable'
+      return delta > 0 ? 'en hausse' : 'en baisse'
+    }
     return estPoids
       ? formaterEvolution(masseVersAffichage(delta, unite), 1, unite)
       : formaterEvolution(delta, 1, champ?.unite ?? '')
@@ -93,7 +122,14 @@
 <div class="pile gap-m">
   <h1>Graphiques</h1>
 
-  {#if champsNumeriques.length === 0 || carnet.nombreMesures === 0}
+  {#if champsNumeriques.length === 0}
+    <!-- Distinguer les deux causes : « pas encore de mesure » et « rien de
+         traçable » appellent des gestes différents. -->
+    <p class="vide">
+      Aucune des données que vous suivez ne se prête à une courbe. Activez par
+      exemple une mensuration ou une échelle dans les paramètres.
+    </p>
+  {:else if carnet.nombreMesures === 0}
     <p class="vide">Les graphiques apparaîtront dès les premières mesures.</p>
   {:else}
     {#if mensurations.length >= 2}
@@ -142,6 +178,7 @@
           unite={estPoids ? unite : (champ?.unite ?? '')}
           libelle={champ?.libelle ?? ''}
           {formatDate}
+          masquerValeurs={estPoids && sansChiffre}
         />
         {#if points.length === 0}
           <p class="vide">Aucune mesure sur cette période.</p>

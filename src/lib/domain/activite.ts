@@ -14,10 +14,14 @@
 
 export const CIBLE_MINUTES_HEBDO_OMS = 150
 
+/**
+ * Aucun booléen « atteint » ici : il en existait un, que rien ne lisait, et qui
+ * disait exactement ce que ce module refuse de dire. Un repère se situe, il ne
+ * se réussit pas.
+ */
 export interface RepereActivite {
   minutesHebdo?: number
   pourcentCible: number | null
-  atteint: boolean
   renforcementRegulier?: boolean
 }
 
@@ -26,13 +30,12 @@ export function calculerRepereActivite(
   renforcementRegulier?: boolean,
 ): RepereActivite {
   if (minutesHebdo === undefined || !Number.isFinite(minutesHebdo) || minutesHebdo < 0) {
-    return { pourcentCible: null, atteint: false, renforcementRegulier }
+    return { pourcentCible: null, renforcementRegulier }
   }
   const pourcent = Math.max(0, Math.min(100, (minutesHebdo / CIBLE_MINUTES_HEBDO_OMS) * 100))
   return {
     minutesHebdo,
     pourcentCible: pourcent,
-    atteint: minutesHebdo >= CIBLE_MINUTES_HEBDO_OMS,
     renforcementRegulier,
   }
 }

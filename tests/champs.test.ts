@@ -3,6 +3,7 @@ import {
   champsParDefaut, champsActifs, champsDeCategorie, trouverChamp, mensurationsActives,
   champsBienEtreActifs, champsActiviteActifs, activerPourUsage,
   genererCle, cleUnique, creerChampPersonnalise, prochainOrdre,
+  estDernierChampActif, porteUneObservation,
   CLE_POIDS,
 } from '$lib/domain/champs'
 import type { CategorieChamp } from '$lib/domain/types'
@@ -30,9 +31,36 @@ describe('champsParDefaut (§ 20)', () => {
     expect(new Set(cles).size).toBe(cles.length)
   })
 
-  it('le poids reste le seul champ système', () => {
-    expect(catalogue.filter((c) => c.systeme)).toHaveLength(1)
-    expect(catalogue.find((c) => c.systeme)?.cle).toBe(CLE_POIDS)
+  it('le poids est désactivable comme tout autre champ', () => {
+    // Il n'existe plus de champ privilégié : suivre uniquement son sommeil ou
+    // son stress est un usage à part entière (§ 3).
+    const poids = catalogue.find((c) => c.cle === CLE_POIDS)
+    expect(poids).toBeDefined()
+    expect(estDernierChampActif(catalogue, CLE_POIDS)).toBe(false)
+  })
+
+  it('refuse de désactiver le dernier champ actif, quel qu\'il soit', () => {
+    const seulStress = catalogue.map((c) => ({ ...c, actif: c.cle === 'stress' }))
+    expect(estDernierChampActif(seulStress, 'stress')).toBe(true)
+    expect(estDernierChampActif(seulStress, CLE_POIDS)).toBe(false)
+  })
+})
+
+describe('porteUneObservation', () => {
+  const mesure = (valeurs: Record<string, number>) => ({
+    id: 'm', profilId: 'p', date: '2026-08-01', valeurs,
+    creeLe: '', modifieLe: '',
+  })
+
+  it('écarte une saisie qui ne porte que la taille', () => {
+    // Renseigner sa taille depuis les paramètres ne doit pas compter comme un relevé.
+    expect(porteUneObservation(mesure({ taille: 165 }))).toBe(false)
+  })
+
+  it('retient toute saisie portant autre chose', () => {
+    expect(porteUneObservation(mesure({ poids: 70 }))).toBe(true)
+    expect(porteUneObservation(mesure({ stress: 3 }))).toBe(true)
+    expect(porteUneObservation(mesure({ taille: 165, sommeil_qualite: 4 }))).toBe(true)
   })
 })
 
@@ -145,7 +173,6 @@ describe('creerChampPersonnalise', () => {
     )
     expect(c.cle).toBe('raideur_matinale')
     expect(c.actif).toBe(true)
-    expect(c.systeme).toBe(false)
     expect(c.personnalise).toBe(true)
   })
 
