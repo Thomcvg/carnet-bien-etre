@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Icône source de l'application (§ 16 du cahier des charges : doux, sobre,
+    apaisant). Le motif reprend le cœur du produit — une courbe de tendance —
+    plutôt qu'un symbole générique. Tout le contenu significatif reste dans le
+    cercle central à 40 % de rayon, la zone sûre pour un usage « maskable »
+    (l'OS peut recadrer l'icône en cercle, carré arrondi ou goutte).
+  -->
+  <rect width="512" height="512" fill="#4a6450"/>
+
+  <!-- Courbe de tendance, douce et montante vers l'apaisement -->
+  <path
+    d="M 146 328 C 196 300, 216 240, 256 224 C 296 208, 316 250, 366 196"
+    fill="none"
+    stroke="#f7f6f2"
+    stroke-width="20"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Point de mesure, à l'extrémité la plus récente -->
+  <circle cx="366" cy="196" r="20" fill="#f7f6f2"/>
+</svg>

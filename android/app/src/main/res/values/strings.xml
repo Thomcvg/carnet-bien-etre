@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Carnet Bien-être</string>
+    <string name="title_activity_main">Carnet Bien-être</string>
+    <string name="package_name">org.carnetbienetre.app</string>
+    <string name="custom_url_scheme">org.carnetbienetre.app</string>
+</resources>

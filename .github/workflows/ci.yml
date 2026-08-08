@@ -1,0 +1,33 @@
+name: Intégration continue
+
+# § 15.3 du cahier des charges : construction, tests et vérification des types
+# à chaque contribution. Les calculs (IMC, progression, migrations…) sont ceux
+# que le § 20 v1.0 interdit de laisser fausser silencieusement.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verifier:
+    name: Construire et vérifier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Vérification des types (TypeScript + Svelte)
+        run: npm run check
+
+      - name: Suite de tests (couche domaine)
+        run: npm run test
+
+      - name: Construction de production
+        run: npm run build

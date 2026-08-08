@@ -1,0 +1,27 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Android (Capacitor, lot 4) — le projet natif est versionné (manifeste,
+# build.gradle, ressources d'icônes), seuls ses artefacts de build ne le sont pas.
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/*.apk
+android/**/gradle-*.log
+ios/
+
+# Éditeurs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*

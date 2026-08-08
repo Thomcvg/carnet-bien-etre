@@ -1,0 +1,2 @@
+Icônes générées par scripts/generer-icones.mjs à partir de scripts/icone-source.svg.
+Ne pas éditer directement — modifier la source SVG puis relancer le script.

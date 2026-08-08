@@ -1,0 +1,2 @@
+Sources pour @capacitor/assets, générées par scripts/generer-assets-android.mjs.
+Ne pas éditer directement — modifier scripts/icone-source.svg puis relancer.

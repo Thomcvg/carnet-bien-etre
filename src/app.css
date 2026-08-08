@@ -1,0 +1,232 @@
+/**
+ * Système visuel — § 14 (design) et § 13 (accessibilité).
+ *
+ * Palette : vert sauge, gris clair, beige clair, blanc, touche de bleu doux.
+ *
+ * Contrainte ajoutée au § 14 : un vert sauge clair sur fond clair n'atteint pas
+ * le seuil de contraste AA. Les teintes qui portent du texte sont donc déclinées
+ * en version assombrie (`-texte`), tandis que les teintes claires ne servent
+ * qu'aux fonds et aux bordures.
+ */
+
+:root {
+  /* Surfaces et traits */
+  --sauge:         #6d8a71;
+  --sauge-texte:   #4a6450;   /* ≥ 4,5:1 sur --papier */
+  --sauge-voile:   #e7ece6;
+  --sauge-trait:   #c7d5c7;
+
+  --bleu:          #4f7ba6;
+  --bleu-texte:    #38618a;
+  --bleu-voile:    #e4eef6;
+  --bleu-trait:    #b6cee2;
+
+  --beige:         #f2efe7;
+
+  --encre:         #232724;
+  --encre-2:       #515c55;
+  --encre-3:       #616b64;
+
+  --papier:        #f7f6f2;
+  --carte:         #ffffff;
+  --trait:         #e0e2db;
+
+  /* Sémantique — jamais employée pour juger une variation de poids (§ 12.1) */
+  --attention:     #8a6320;
+  --attention-fond:#faf1e0;
+
+  --rayon:         10px;
+  --rayon-s:       7px;
+  --ombre:         0 1px 2px rgb(35 39 36 / 5%), 0 10px 28px -20px rgb(35 39 36 / 30%);
+
+  --serif: ui-serif, Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  --sans: -apple-system, 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, sans-serif;
+  --mono: 'Cascadia Mono', Consolas, ui-monospace, Menlo, monospace;
+
+  --cible-tactile: 48px;      /* J8 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sauge: #9bbb9f; --sauge-texte: #a9c6ad; --sauge-voile: #222a23; --sauge-trait: #3a463b;
+    --bleu: #83aad0; --bleu-texte: #96bade; --bleu-voile: #1a242f; --bleu-trait: #34506c;
+    --beige: #1e211d;
+    --encre: #e7eae5; --encre-2: #a9b3ac; --encre-3: #8b958e;
+    --papier: #131614; --carte: #1a1e1b; --trait: #2a2f2b;
+    --attention: #d3a45f; --attention-fond: #2a2317;
+    --ombre: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 28px -20px rgb(0 0 0 / 80%);
+  }
+}
+
+:root[data-theme='sombre'] {
+  --sauge: #9bbb9f; --sauge-texte: #a9c6ad; --sauge-voile: #222a23; --sauge-trait: #3a463b;
+  --bleu: #83aad0; --bleu-texte: #96bade; --bleu-voile: #1a242f; --bleu-trait: #34506c;
+  --beige: #1e211d;
+  --encre: #e7eae5; --encre-2: #a9b3ac; --encre-3: #8b958e;
+  --papier: #131614; --carte: #1a1e1b; --trait: #2a2f2b;
+  --attention: #d3a45f; --attention-fond: #2a2317;
+  --ombre: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 28px -20px rgb(0 0 0 / 80%);
+}
+
+:root[data-theme='clair'] {
+  --sauge: #6d8a71; --sauge-texte: #4a6450; --sauge-voile: #e7ece6; --sauge-trait: #c7d5c7;
+  --bleu: #4f7ba6; --bleu-texte: #38618a; --bleu-voile: #e4eef6; --bleu-trait: #b6cee2;
+  --beige: #f2efe7;
+  --encre: #232724; --encre-2: #515c55; --encre-3: #616b64;
+  --papier: #f7f6f2; --carte: #ffffff; --trait: #e0e2db;
+  --attention: #8a6320; --attention-fond: #faf1e0;
+  --ombre: 0 1px 2px rgb(35 39 36 / 5%), 0 10px 28px -20px rgb(35 39 36 / 30%);
+}
+
+/* Contraste élevé (J2) : on pousse les valeurs, on ne change pas la structure. */
+/* Les fonds « voile » restent teintés : à `#ffffff` ils valaient exactement
+   `--carte`, et tout ce qui signale un état par son fond — onglet actif, option
+   choisie, étiquette, bandeau — devenait invisible dans le thème même qui existe
+   pour rendre les repères plus lisibles. Les teintes ci-dessous gardent un
+   contraste supérieur à 15:1 avec l'encre noire. */
+:root[data-theme='contraste'] {
+  --sauge: #2f4a35; --sauge-texte: #1d3323; --sauge-voile: #dbe4dc; --sauge-trait: #1d3323;
+  --bleu: #14416e; --bleu-texte: #0d2f52; --bleu-voile: #dde8f2; --bleu-trait: #0d2f52;
+  --beige: #ffffff;
+  --encre: #000000; --encre-2: #1a1a1a; --encre-3: #2b2b2b;
+  --papier: #ffffff; --carte: #ffffff; --trait: #000000;
+  --attention: #6b3f00; --attention-fond: #fff6e6;
+  --ombre: none;
+}
+:root[data-theme='contraste'] .carte,
+:root[data-theme='contraste'] .bouton { border-width: 2px; }
+
+/* Échelle typographique (J1). Tout le reste est en rem : la mise en page suit. */
+:root { font-size: 16px; }
+:root[data-echelle='125'] { font-size: 20px; }
+:root[data-echelle='150'] { font-size: 24px; }
+:root[data-echelle='200'] { font-size: 32px; }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--encre);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+h1 { font-size: 1.6rem; line-height: 1.2; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.05rem; }
+
+p { margin: 0; }
+
+:focus-visible {
+  outline: 3px solid var(--bleu);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* J9 : rien d'essentiel ne dépend d'un geste. Tous les contrôles sont des boutons. */
+button, input, select, textarea { font: inherit; color: inherit; }
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: var(--cible-tactile);
+  padding: 0.6em 1.1em;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  background: var(--carte);
+  color: var(--encre);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+.bouton:hover { border-color: var(--sauge); }
+.bouton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.bouton--principal {
+  background: var(--sauge-texte);
+  border-color: var(--sauge-texte);
+  color: var(--papier);
+  font-weight: 600;
+}
+.bouton--principal:hover { filter: brightness(1.12); border-color: var(--sauge-texte); }
+:root[data-theme='sombre'] .bouton--principal,
+:root[data-theme='contraste'] .bouton--principal { color: var(--papier); }
+
+.bouton--discret { border-color: transparent; background: transparent; color: var(--encre-2); }
+.bouton--discret:hover { background: var(--sauge-voile); color: var(--encre); }
+
+.carte {
+  background: var(--carte);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon);
+  padding: 1rem 1.1rem;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.champ > label { font-size: 0.9rem; color: var(--encre-2); }
+.champ input, .champ select, .champ textarea {
+  min-height: var(--cible-tactile);
+  padding: 0.5em 0.7em;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  background: var(--carte);
+  width: 100%;
+}
+.champ input:focus-visible, .champ select:focus-visible, .champ textarea:focus-visible {
+  border-color: var(--bleu);
+}
+.champ .aide { font-size: 0.82rem; color: var(--encre-3); }
+
+.nombre { font-variant-numeric: tabular-nums; }
+
+/* Accessible aux lecteurs d'écran, invisible à l'œil (J6). */
+.pour-lecteur {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pile { display: flex; flex-direction: column; }
+.gap-s { gap: 0.5rem; }
+.gap-m { gap: 1rem; }
+.gap-l { gap: 1.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Impression (J17) : le carnet doit rester lisible sur papier. */
+@media print {
+  :root { font-size: 12pt; }
+  body { background: #fff; color: #000; }
+  .sans-impression { display: none !important; }
+  .carte { border: 1px solid #999; break-inside: avoid; }
+  a[href]::after { content: ''; }
+}
