@@ -10,6 +10,7 @@
 
 import type { DefinitionChamp, Mesure } from '../domain/types'
 import { formaterDate } from '../domain/dates'
+import { comparerMesures } from '../domain/tendance'
 
 const SEPARATEUR = ';'
 
@@ -46,17 +47,24 @@ export function versCsv(
 ): string {
   const colonnes = [...champs].sort((a, b) => a.ordre - b.ordre)
 
+  // Mêmes colonnes que l'export Excel : deux exports des mêmes données ne
+  // doivent pas en livrer des sous-ensembles différents. L'heure distingue
+  // deux pesées d'un même jour (A29), sans quoi elles sont indiscernables.
   const entetes = [
     'Date',
+    'Heure',
     ...colonnes.map((c) => (c.unite ? `${c.libelle} (${c.unite})` : c.libelle)),
+    'Étiquettes',
     'Notes',
   ]
 
   const lignes = [...mesures]
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort(comparerMesures)
     .map((m) => [
       echapper(formaterDate(m.date, options.formatDate)),
+      cellule(m.moment),
       ...colonnes.map((c) => cellule(m.valeurs[c.cle])),
+      cellule(m.etiquettes && m.etiquettes.length > 0 ? m.etiquettes.join(', ') : undefined),
       cellule(m.notes),
     ].join(SEPARATEUR))
 

@@ -18,7 +18,10 @@ type DeclencheurInstallation = Event & {
 class EtatPwa {
   peutInstaller = $state(false)
   miseAJourDisponible = $state(false)
-  horsLigne = $state(false)
+  // Pas d'état « hors ligne » ici : il en existait un que rien n'alimentait ni
+  // ne lisait. Le carnet fonctionne identiquement avec ou sans réseau (M7), donc
+  // il n'a rien à en dire — et surtout pas à inquiéter sur une perte de connexion
+  // qui ne change rien pour lui.
 
   #evenementInstallation: DeclencheurInstallation | null = null
   #appliquerMiseAJour: ((rechargerPage?: boolean) => Promise<void>) | null = null

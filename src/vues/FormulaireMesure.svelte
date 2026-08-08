@@ -25,10 +25,12 @@
     mensurationsActives, champsBienEtreActifs, champsActiviteActifs, trouverChamp, CLE_POIDS,
     champAffiche, CLE_TENSION,
   } from '$lib/domain/champs'
-  import { analyserNombre, formaterNombre, masseVersAffichage, masseVersStockage } from '$lib/domain/unites'
-  import { reperesDeSaisie, trouverDoublon } from '$lib/domain/saisie'
+  import { analyserNombre, masseVersAffichage } from '$lib/domain/unites'
+  import {
+    reperesDeSaisie, trouverDoublon, construireValeurs, reprendreValeurs,
+  } from '$lib/domain/saisie'
   import { versISO, ajouterMois, formaterDate, estDateISOValide } from '$lib/domain/dates'
-  import type { DefinitionChamp, ValeurChamp, ValeurTension } from '$lib/domain/types'
+  import type { ContextePesee, DefinitionChamp, ValeurChamp } from '$lib/domain/types'
 
   interface Props {
     ouvert: boolean
@@ -41,6 +43,8 @@
   let date = $state(versISO(new Date()))
   /** `HH:MM` — renseigné seulement quand plusieurs pesées coexistent le même jour (A29). */
   let moment = $state('')
+  /** A29 : à jeun, habillé… Facultatif, et jamais deviné. */
+  let contextePesee = $state<ContextePesee | ''>('')
   let saisies = $state<Record<string, string>>({})
   let valeursTypees = $state<Record<string, ValeurChamp>>({})
   let etiquettesTexte = $state('')
@@ -55,9 +59,10 @@
   const unite = $derived(carnet.profil?.uniteMasse ?? 'kg')
 
   // Règle 16 : le poids est stocké en kilogrammes et saisi dans l'unité choisie.
-  // La conversion se fait ici, aux deux extrémités du formulaire — nulle part ailleurs.
+  // La traduction elle-même vit dans `domain/saisie.ts` (`construireValeurs` et
+  // `reprendreValeurs`) : seul endroit où elle est testable, et donc seul endroit
+  // où elle a le droit d'exister.
   const versSaisie = (kg: number) => masseVersAffichage(kg, unite)
-  const versStockage = (saisi: number) => masseVersStockage(saisi, unite)
 
   // Le poids ne s'affiche que s'il est suivi : c'est un champ comme un autre (§ 3).
   const champPoidsBrut = $derived(trouverChamp(carnet.champs, CLE_POIDS))
@@ -118,6 +123,7 @@
   function reinitialiser() {
     date = versISO(new Date())
     moment = ''
+    contextePesee = ''
     saisies = {}
     valeursTypees = {}
     etiquettesTexte = ''
@@ -144,25 +150,11 @@
     if (existante) {
       date = existante.date
       moment = existante.moment ?? ''
+      contextePesee = existante.contextePesee ?? ''
       notes = existante.notes ?? ''
       etiquettesTexte = (existante.etiquettes ?? []).join(', ')
 
-      const reprisesTexte: Record<string, string> = {}
-      const reprisesTypees: Record<string, ValeurChamp> = {}
-      for (const [cle, v] of Object.entries(existante.valeurs)) {
-        if (cle === CLE_TENSION && v !== null && typeof v === 'object' && !Array.isArray(v)) {
-          const t = v as ValeurTension
-          reprisesTexte['tension_sys'] = String(t.sys)
-          reprisesTexte['tension_dia'] = String(t.dia)
-          if (t.pouls !== undefined) reprisesTexte['tension_pouls'] = String(t.pouls)
-        } else if (typeof v === 'number') {
-          reprisesTexte[cle] = cle === CLE_POIDS
-            ? formaterNombre(versSaisie(v))
-            : String(v).replace('.', ',')
-        } else if (typeof v === 'boolean' || typeof v === 'string' || Array.isArray(v)) {
-          reprisesTypees[cle] = v
-        }
-      }
+      const { textes: reprisesTexte, typees: reprisesTypees } = reprendreValeurs(existante, unite)
       saisies = reprisesTexte
       valeursTypees = reprisesTypees
 
@@ -203,36 +195,14 @@
     if (!peutEnregistrer) return
 
     // Règle 5 et règle 13 : seules les valeurs réellement saisies sont enregistrées.
-    // Un repère grisé non confirmé ne devient jamais une donnée.
-    const valeurs: Record<string, ValeurChamp> = {}
-    for (const [cle, texte] of Object.entries(saisies)) {
-      if (cle.startsWith('tension_')) continue
-      const n = analyserNombre(texte)
-      if (n === undefined) continue
-      // Le poids repart vers son unité de stockage ; le reste est déjà canonique.
-      valeurs[cle] = cle === CLE_POIDS ? versStockage(n) : n
-    }
-    for (const [cle, v] of Object.entries(valeursTypees)) {
-      valeurs[cle] = v
-    }
-
-    const sys = analyserNombre(saisies['tension_sys'] ?? '')
-    const dia = analyserNombre(saisies['tension_dia'] ?? '')
-    if (sys !== undefined && dia !== undefined) {
-      const pouls = analyserNombre(saisies['tension_pouls'] ?? '')
-      valeurs[CLE_TENSION] = pouls !== undefined ? { sys, dia, pouls } : { sys, dia }
-    }
-
-    // Une modification ne doit pas perdre les champs qu'elle n'affiche pas
-    // (un champ désactivé depuis, par exemple).
+    // Un repère grisé non confirmé ne devient jamais une donnée. Toute la
+    // traduction — conversions comprises — vit dans le domaine, où elle est testée.
     const existante = mesureId ? carnet.mesures.find((m) => m.id === mesureId) : undefined
-    if (existante) {
-      for (const [cle, v] of Object.entries(existante.valeurs)) {
-        if (!(cle in valeurs) && !(cle === CLE_TENSION && sys !== undefined && dia !== undefined)) {
-          valeurs[cle] = v
-        }
-      }
-    }
+    const valeurs = construireValeurs(
+      { textes: saisies, typees: valeursTypees },
+      unite,
+      existante ? $state.snapshot(existante) : undefined,
+    )
 
     const dateEnregistree = date
     const etiquettes = etiquettesSaisies()
@@ -241,9 +211,7 @@
       notes: notes.trim() || undefined,
       etiquettes: etiquettes.length > 0 ? etiquettes : undefined,
       moment: moment || undefined,
-      // Le formulaire ne propose pas encore le contexte de pesée : on reconduit
-      // celui de la mesure modifiée plutôt que de l'effacer silencieusement.
-      contextePesee: existante?.contextePesee,
+      contextePesee: contextePesee || undefined,
       id: mesureId ?? undefined,
     })
 
@@ -347,6 +315,19 @@
         autofocus={ouvert}
         onchange={(t) => majSaisie(CLE_POIDS, t)}
       />
+
+      <!-- A29 : dans quelles conditions la pesée a eu lieu. Facultatif, et
+           déterminant pour relire un écart sans s'en inquiéter. -->
+      <div class="champ contexte">
+        <label for="contexte-pesee">Conditions de la pesée <span class="facultatif">facultatif</span></label>
+        <select id="contexte-pesee" bind:value={contextePesee}>
+          <option value="">Non précisé</option>
+          <option value="a_jeun">À jeun</option>
+          <option value="habille">Habillé·e</option>
+          <option value="apres_sport">Après une activité</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
     {/if}
 
     {#if mensurations.length > 0}

@@ -11,7 +11,7 @@
    */
   import { carnet } from '$lib/etat/carnet.svelte'
   import {
-    mensurationsActives, CLE_POIDS, CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT,
+    mensurationsActives, champsActifs, CLE_POIDS, CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT,
   } from '$lib/domain/champs'
   import { bilanChamp } from '$lib/domain/bilan'
   import { serie, variationsMensuelles, sensEvolution } from '$lib/domain/tendance'
@@ -46,6 +46,33 @@
       if (!bilan.premiere || !bilan.derniere) return []
       return [{ champ, premiere: bilan.premiere, derniere: bilan.derniere, evolution: bilan.evolution }]
     }),
+  )
+
+  /* ---------------- autres données suivies ---------------- */
+
+  /**
+   * Le bilan ne résumait que le poids et les mensurations : un carnet qui suit
+   * son sommeil ou son stress n'y trouvait qu'un décompte de mesures. Toute
+   * donnée numérique suivie a pourtant un début, un présent et une évolution.
+   *
+   * Les échelles gardent leur « / 5 » : une note de 3 n'est pas un 3 de tour de
+   * taille, et l'afficher nu inviterait à les comparer entre elles.
+   */
+  const bilansAutres = $derived(
+    champsActifs(carnet.champs)
+      .filter((c) => c.categorie !== 'corps'
+        && (c.type === 'nombre' || c.type === 'duree' || c.type === 'echelle5'))
+      .flatMap((champ) => {
+        const bilan = bilanChamp(carnet.mesures, champ.cle)
+        if (!bilan.premiere || !bilan.derniere || bilan.nombreMesures < 2) return []
+        const suffixe = champ.type === 'echelle5' ? ' / 5' : (champ.unite ? ` ${champ.unite}` : '')
+        return [{
+          champ,
+          depart: `${formaterNombre(bilan.premiere.valeur, champ.type === 'echelle5' ? 0 : 1)}${suffixe}`,
+          actuel: `${formaterNombre(bilan.derniere.valeur, champ.type === 'echelle5' ? 0 : 1)}${suffixe}`,
+          evolution: bilan.evolution,
+        }]
+      }),
   )
 
   /* ---------------- résumé du mois (G6, C22) ---------------- */
@@ -184,6 +211,27 @@
                 <div><dt>Départ</dt><dd class="nombre">{formaterNombre(premiere.valeur)} {champ.unite ?? ''}</dd></div>
                 <div><dt>Actuel</dt><dd class="nombre">{formaterNombre(derniere.valeur)} {champ.unite ?? ''}</dd></div>
                 {#if evolution !== null}
+                  <div><dt>Évolution</dt><dd class="nombre">{formaterEvolution(evolution, 1, champ.unite ?? '')}</dd></div>
+                {/if}
+              </dl>
+            </div>
+          {/each}
+        </div>
+      </section>
+    {/if}
+
+    <!-- Autres données suivies (bien-être, santé, activité) -->
+    {#if bilansAutres.length > 0}
+      <section class="carte">
+        <h2>Autres données suivies</h2>
+        <div class="liste-mensurations">
+          {#each bilansAutres as { champ, depart, actuel, evolution } (champ.cle)}
+            <div class="mensuration">
+              <p class="mensuration-titre">{champ.libelle}</p>
+              <dl class="grille-bilan grille-bilan--compacte">
+                <div><dt>Départ</dt><dd class="nombre">{depart}</dd></div>
+                <div><dt>Actuel</dt><dd class="nombre">{actuel}</dd></div>
+                {#if evolution !== null && champ.type !== 'echelle5'}
                   <div><dt>Évolution</dt><dd class="nombre">{formaterEvolution(evolution, 1, champ.unite ?? '')}</dd></div>
                 {/if}
               </dl>

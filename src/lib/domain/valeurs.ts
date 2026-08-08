@@ -13,7 +13,7 @@
  *    poids, et laisse les autres données lisibles.
  */
 
-import type { DefinitionChamp, Mesure } from './types'
+import type { ContextePesee, DefinitionChamp, Mesure } from './types'
 import { lireNombre, lireTexte, lireBooleen, lireTension, lireChoixMultiple } from './types'
 import { formaterNombre, masseVersAffichage, type UniteMasse } from './unites'
 import { CLE_POIDS } from './champs'
@@ -28,6 +28,18 @@ export interface OptionsAffichage {
    * chiffre, pour dire un sens d'évolution plutôt qu'une valeur.
    */
   poidsPrecedent?: number
+}
+
+/** Conditions de pesée (A29), telles qu'elles se relisent dans l'historique. */
+const LIBELLES_CONTEXTE: Record<ContextePesee, string> = {
+  a_jeun: 'à jeun',
+  habille: 'habillé·e',
+  apres_sport: 'après une activité',
+  autre: 'autre contexte',
+}
+
+export function libelleContextePesee(c: ContextePesee): string {
+  return LIBELLES_CONTEXTE[c]
 }
 
 const MOTS_TENDANCE: Record<string, string> = {

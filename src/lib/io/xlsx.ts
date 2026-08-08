@@ -15,6 +15,7 @@
 import * as XLSX from 'xlsx'
 import type { DefinitionChamp, Mesure } from '../domain/types'
 import { formaterDate } from '../domain/dates'
+import { comparerMesures } from '../domain/tendance'
 
 type CelluleTypee = string | number | undefined
 
@@ -42,17 +43,21 @@ export function versXlsx(
 ): ArrayBuffer {
   const colonnes = [...champs].sort((a, b) => a.ordre - b.ordre)
 
+  // Mêmes colonnes que l'export CSV, et l'heure qui distingue deux pesées d'un
+  // même jour (A29) — sans elle, deux lignes identiques restent inexplicables.
   const entetes = [
     'Date',
+    'Heure',
     ...colonnes.map((c) => (c.unite ? `${c.libelle} (${c.unite})` : c.libelle)),
     'Étiquettes',
     'Notes',
   ]
 
   const lignes = [...mesures]
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort(comparerMesures)
     .map((m) => [
       formaterDate(m.date, options.formatDate),
+      m.moment,
       ...colonnes.map((c) => valeurCellule(m.valeurs[c.cle])),
       m.etiquettes && m.etiquettes.length > 0 ? m.etiquettes.join(', ') : undefined,
       m.notes,

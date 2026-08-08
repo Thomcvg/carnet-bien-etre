@@ -36,6 +36,7 @@
       dateFin = ''
       type = 'personnel'
     }
+    confirmationSuppression = false
   })
 
   const TYPES: Evenement['type'][] = ['personnel', 'sante', 'activite', 'autre']
@@ -54,9 +55,17 @@
     onfermer()
   }
 
+  /**
+   * Règle 5 de la charte : toute suppression est confirmée. Contrairement aux
+   * mesures, un événement n'a pas d'annulation après coup — la confirmation est
+   * donc le seul filet, et elle n'est pas facultative.
+   */
+  let confirmationSuppression = $state(false)
+
   async function supprimer() {
     if (!evenementId) return
     await carnet.supprimerEvenement(evenementId)
+    confirmationSuppression = false
     onfermer()
   }
 </script>
@@ -90,19 +99,27 @@
     </div>
 
     <p class="aide">
-      Les événements servent à donner du contexte à votre historique — ils apparaîtront
-      sur les graphiques dans une prochaine version.
+      Les événements donnent du contexte à votre historique : ils apparaissent en
+      repère discret sur les courbes, à leur date.
     </p>
   </div>
 
   {#snippet pied()}
-    {#if modification}
-      <button type="button" class="bouton" onclick={supprimer}>Supprimer</button>
+    {#if modification && !confirmationSuppression}
+      <button type="button" class="bouton retirer" onclick={() => (confirmationSuppression = true)}>
+        Supprimer
+      </button>
     {/if}
-    <button type="button" class="bouton" onclick={onfermer}>Annuler</button>
-    <button type="button" class="bouton bouton--principal" disabled={!peutEnregistrer} onclick={enregistrer}>
-      Enregistrer
-    </button>
+    {#if confirmationSuppression}
+      <span class="demande">Supprimer « {libelle} » ?</span>
+      <button type="button" class="bouton" onclick={() => (confirmationSuppression = false)}>Garder</button>
+      <button type="button" class="bouton bouton--principal" onclick={supprimer}>Confirmer</button>
+    {:else}
+      <button type="button" class="bouton" onclick={onfermer}>Annuler</button>
+      <button type="button" class="bouton bouton--principal" disabled={!peutEnregistrer} onclick={enregistrer}>
+        Enregistrer
+      </button>
+    {/if}
   {/snippet}
 </Modale>
 
@@ -112,4 +129,6 @@
     border: 1px solid var(--trait); border-radius: 999px; padding: 0.05em 0.55em;
   }
   .deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.9rem; }
+  .demande { margin-right: auto; font-size: 0.92rem; align-self: center; }
+  .retirer { margin-right: auto; }
 </style>

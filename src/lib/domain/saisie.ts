@@ -6,7 +6,9 @@
  * qui sait ce qu'elle saisit doit toujours pouvoir l'enregistrer.
  */
 
-import type { DefinitionChamp, DateISO, Mesure } from './types'
+import type { DefinitionChamp, DateISO, Mesure, ValeurChamp, ValeurTension } from './types'
+import { CLE_POIDS, CLE_TENSION } from './champs'
+import { analyserNombre, formaterNombre, masseVersAffichage, masseVersStockage, type UniteMasse } from './unites'
 
 /** Écart relatif à la mesure précédente au-delà duquel on demande confirmation. */
 export const ECART_SUSPECT = 0.2
@@ -93,6 +95,107 @@ export function trouverDoublon(
 ): Doublon | undefined {
   const existante = mesures.find((m) => m.date === date && m.id !== idExclu)
   return existante ? { mesure: existante } : undefined
+}
+
+/* ------------------------------------------------------------------ */
+/* Traduction formulaire ↔ mesure                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Ces deux fonctions sont la **couture** entre ce que l'on tape et ce que l'on
+ * stocke, et elles vivent ici plutôt que dans le composant de saisie pour une
+ * raison précise.
+ *
+ * Le défaut le plus grave qu'ait connu ce projet — un poids saisi en livres
+ * enregistré tel quel, comme s'il s'agissait de kilogrammes — tenait entièrement
+ * dans cette traduction. Les conversions elles-mêmes étaient justes et testées ;
+ * simplement, le formulaire ne les appelait pas. Aucun test ne pouvait le voir,
+ * parce que la logique était enfermée dans un `.svelte`.
+ *
+ * Tout ce qui transforme une saisie en donnée est donc ici, pur et testé.
+ *
+ * Deux familles de valeurs cohabitent, comme dans le formulaire : les champs
+ * numériques et texte transitent par des chaînes (`textes`), les échelles,
+ * booléens et choix sont déjà dans leur type final (`typees`).
+ */
+export interface SaisieFormulaire {
+  textes: Record<string, string>
+  typees: Record<string, ValeurChamp>
+}
+
+/**
+ * Construit les valeurs à enregistrer.
+ *
+ * `mesureExistante` sert à la modification : les champs qu'elle porte et que le
+ * formulaire n'affiche pas — un champ désactivé depuis, par exemple — sont
+ * reconduits plutôt que perdus.
+ */
+export function construireValeurs(
+  saisie: SaisieFormulaire,
+  uniteMasse: UniteMasse,
+  mesureExistante?: Mesure,
+): Record<string, ValeurChamp> {
+  const valeurs: Record<string, ValeurChamp> = {}
+
+  for (const [cle, texte] of Object.entries(saisie.textes)) {
+    if (cle.startsWith('tension_')) continue
+    const n = analyserNombre(texte)
+    if (n === undefined) continue
+    // Le stockage est canonique : le poids repart en kilogrammes (règle 16).
+    valeurs[cle] = cle === CLE_POIDS ? masseVersStockage(n, uniteMasse) : n
+  }
+
+  for (const [cle, v] of Object.entries(saisie.typees)) {
+    valeurs[cle] = v
+  }
+
+  const sys = analyserNombre(saisie.textes['tension_sys'] ?? '')
+  const dia = analyserNombre(saisie.textes['tension_dia'] ?? '')
+  const tensionSaisie = sys !== undefined && dia !== undefined
+  if (tensionSaisie) {
+    const pouls = analyserNombre(saisie.textes['tension_pouls'] ?? '')
+    valeurs[CLE_TENSION] = pouls !== undefined
+      ? { sys: sys!, dia: dia!, pouls }
+      : { sys: sys!, dia: dia! }
+  }
+
+  if (mesureExistante) {
+    for (const [cle, v] of Object.entries(mesureExistante.valeurs)) {
+      if (cle in valeurs) continue
+      // Une tension saisie remplace l'ancienne, y compris pour l'effacer en partie.
+      if (cle === CLE_TENSION && tensionSaisie) continue
+      valeurs[cle] = v
+    }
+  }
+
+  return valeurs
+}
+
+/**
+ * Opération inverse : prépare le formulaire à partir d'une mesure existante.
+ * Le poids repasse dans l'unité d'affichage — sans quoi modifier une mesure en
+ * livres afficherait des kilogrammes.
+ */
+export function reprendreValeurs(mesure: Mesure, uniteMasse: UniteMasse): SaisieFormulaire {
+  const textes: Record<string, string> = {}
+  const typees: Record<string, ValeurChamp> = {}
+
+  for (const [cle, v] of Object.entries(mesure.valeurs)) {
+    if (cle === CLE_TENSION && v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      const t = v as ValeurTension
+      textes['tension_sys'] = String(t.sys)
+      textes['tension_dia'] = String(t.dia)
+      if (t.pouls !== undefined) textes['tension_pouls'] = String(t.pouls)
+    } else if (typeof v === 'number') {
+      textes[cle] = cle === CLE_POIDS
+        ? formaterNombre(masseVersAffichage(v, uniteMasse))
+        : String(v).replace('.', ',')
+    } else if (typeof v === 'boolean' || typeof v === 'string' || Array.isArray(v)) {
+      typees[cle] = v
+    }
+  }
+
+  return { textes, typees }
 }
 
 /* ------------------------------------------------------------------ */

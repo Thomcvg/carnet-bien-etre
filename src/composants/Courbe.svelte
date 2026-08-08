@@ -97,6 +97,15 @@
   const chemin = (serie: PointSerie[]) =>
     serie.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.date).toFixed(1)},${y(p.valeur).toFixed(1)}`).join(' ')
 
+  /**
+   * Le nombre de décimales suit l'étendue affichée.
+   *
+   * Arrondir systématiquement à l'unité donnait « 4, 4, 4, 4, 5 » sur une courbe
+   * resserrée — typiquement une échelle de 1 à 5, ou une série d'un seul point,
+   * où le domaine ne couvre qu'une unité ou deux.
+   */
+  const decimalesY = $derived(!domaine || domaine.vmax - domaine.vmin >= 5 ? 0 : 1)
+
   const graduationsY = $derived.by(() => {
     if (!domaine) return []
     const { vmin, vmax } = domaine
@@ -167,7 +176,7 @@
       {#each graduationsY as g}
         <line x1={L} x2={W - R} y1={g.y} y2={g.y} class="grille" />
         {#if !masquerValeurs}
-          <text x={L - 8} y={g.y + 4} class="etiquette-y">{formaterNombre(g.v, 0)}</text>
+          <text x={L - 8} y={g.y + 4} class="etiquette-y">{formaterNombre(g.v, decimalesY)}</text>
         {/if}
       {/each}
 

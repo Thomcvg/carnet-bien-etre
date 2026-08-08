@@ -7,9 +7,10 @@ gêne l'usage.
 
 Chaque constat indique le fichier, ce qui se passe, et pourquoi cela compte.
 
-> **État au 9 août 2026.** Les parties 1 à 4 (première passe) et 7 (seconde passe)
-> sont **corrigées**. Les décisions de conception prises en chemin sont en partie 9,
-> avec le chantier qu'elles ont ouvert : **rendre le poids optionnel**.
+> **Audit clos le 9 août 2026.** Trois passes, toutes corrigées : parties 1 à 4
+> (défauts et incohérences), 7 (seconde relecture), 10 (clôture). Les décisions de
+> conception sont en partie 8, le chantier qu'elles ont ouvert — **rendre le poids
+> optionnel** — en partie 9, et ce qui reste sciemment ouvert en partie 11.
 
 ---
 
@@ -549,14 +550,75 @@ d'obligatoire au-delà de la date **et du poids** ».
 
 ---
 
-## 10. Ce qui reste à faire
+## 10. Troisième passe — clôture
 
-1. **Un test qui traverse la couture domaine ↔ interface.** Le bug des livres a
-   survécu à 160 tests verts parce que rien n'exerçait le formulaire lui-même.
-   C'est la leçon des deux passes, et elle n'est toujours pas tirée.
-2. **Une courbe à un seul point affiche des graduations répétées** (« 4, 4, 4, 4,
-   5 »), l'échelle se resserrant autour de l'unique valeur. Sans gravité, visible.
-3. **Le bilan ne résume que le poids et les mensurations.** Un carnet d'échelles
-   n'y trouve qu'un décompte de mesures — il mériterait le même traitement.
-4. **`contextePesee`** (à jeun, habillé…) reste typé et transporté sans être
-   proposé à la saisie. Il n'est plus effacé, mais toujours pas offert.
+### 10.1 — La couture domaine ↔ interface est enfin testée
+
+C'était la leçon des deux premières passes, et la seule qui n'avait pas été tirée.
+
+Le bug des livres tenait entièrement dans la **traduction** entre ce qu'on tape et
+ce qu'on stocke. Les conversions étaient justes et testées ; le formulaire ne les
+appelait pas. Aucun test ne pouvait le voir, parce que cette traduction vivait
+dans un `.svelte`.
+
+Elle a été extraite dans `domain/saisie.ts` — `construireValeurs()` et
+`reprendreValeurs()` — et le formulaire les appelle. **13 tests** couvrent
+désormais ce passage, dont l'aller-retour en livres qui échouait :
+
+```
+construireValeurs({ textes: { poids: '150' } }, 'lb')  →  68,0389 kg
+reprendreValeurs(mesure(68,0389), 'lb')                →  « 150,0 »
+```
+
+Y sont aussi couverts : la virgule décimale, l'assemblage de la tension à partir
+de ses trois sous-champs, l'absence de clé parasite `tension_sys` dans la mesure,
+la reconduction des champs désactivés lors d'une modification, et la saisie sans
+poids.
+
+**La règle qui en découle :** toute transformation de donnée vit dans `domain/`.
+Un composant assemble et affiche ; il ne traduit pas.
+
+### 10.2 à 10.4 — Corrigés
+
+- **Graduations d'une courbe resserrée** : le nombre de décimales suit désormais
+  l'étendue affichée. « 4, 4, 4, 4, 5 » devenait illisible sur une échelle de 1 à 5.
+- **Bilan des autres données suivies** : un carnet d'échelles n'y trouvait qu'un
+  décompte. Chaque donnée numérique suivie y a maintenant son départ et son
+  présent. Les échelles gardent leur « / 5 » et n'affichent **pas** d'évolution
+  chiffrée : soustraire deux ressentis n'a pas de sens.
+- **`contextePesee`** est proposé à la saisie (à jeun, habillé·e, après une
+  activité) et relu dans l'historique.
+
+### 10.5 — Constats de la dernière relecture, corrigés
+
+- **Les rappels de prise (B6) n'étaient jamais affichés.** La case était cochée,
+  l'heure enregistrée, et rien n'arrivait — le pire cas de fonctionnalité morte,
+  puisque la personne y consent activement. Le repli PWA promis par le § 15.1 est
+  maintenant en place : les prises du jour s'affichent à l'ouverture.
+- **Supprimer un événement ou un traitement ne demandait aucune confirmation**,
+  alors que la règle 5 de la charte l'exige et qu'aucune annulation n'existe après
+  coup, contrairement aux mesures.
+- **L'aide des événements annonçait qu'ils apparaîtraient « sur les graphiques
+  dans une prochaine version »** — ils y sont depuis le lot 3.
+- **`pwa.horsLigne`** : état déclaré, jamais alimenté, jamais lu. Retiré. Le
+  carnet fonctionne identiquement sans réseau : il n'a rien à en dire.
+- **Les exports CSV et Excel divergeaient** (les étiquettes n'étaient que dans
+  l'Excel) et ignoraient l'heure d'une seconde pesée, rendant deux lignes d'un
+  même jour indiscernables. Ils partagent désormais colonnes et tri.
+
+---
+
+## 11. Ce qui reste ouvert
+
+Rien de bloquant. Trois points connus, assumés :
+
+1. **Les migrations de schéma ne sont câblées que sur l'import JSON**, pas sur le
+   chargement de la base locale — Dexie gère sa propre montée de version, et les
+   deux coïncident tant qu'une migration se contente d'ajouter une collection
+   vide. Le commentaire en tête de `domain/migrations.ts` le dit sans le farder.
+   À unifier le jour où une migration devra transformer des valeurs stockées.
+2. **Aucun test ne couvre les composants Svelte eux-mêmes.** La couture est
+   testée, le rendu ne l'est pas. C'est un choix de proportion, pas un oubli :
+   cela demanderait un environnement DOM et des dépendances supplémentaires.
+3. **La météo (§ 11.8)** reste la seule porte réseau prévue par le cahier des
+   charges, et n'est pas implémentée. Aucune requête réseau n'existe à ce jour.

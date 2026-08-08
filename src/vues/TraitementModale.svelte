@@ -41,6 +41,7 @@
       rappelActif = false
       heureRappel = '08:00'
     }
+    confirmationSuppression = false
   })
 
   const peutEnregistrer = $derived(nom.trim().length > 0 && debut.length > 0)
@@ -60,9 +61,13 @@
     onfermer()
   }
 
+  /** Règle 5 de la charte : une suppression sans annulation possible se confirme. */
+  let confirmationSuppression = $state(false)
+
   async function supprimer() {
     if (!traitementId) return
     await carnet.supprimerTraitement(traitementId)
+    confirmationSuppression = false
     onfermer()
   }
 </script>
@@ -107,13 +112,21 @@
   </div>
 
   {#snippet pied()}
-    {#if modification}
-      <button type="button" class="bouton" onclick={supprimer}>Supprimer</button>
+    {#if modification && !confirmationSuppression}
+      <button type="button" class="bouton retirer" onclick={() => (confirmationSuppression = true)}>
+        Supprimer
+      </button>
     {/if}
-    <button type="button" class="bouton" onclick={onfermer}>Annuler</button>
-    <button type="button" class="bouton bouton--principal" disabled={!peutEnregistrer} onclick={enregistrer}>
-      Enregistrer
-    </button>
+    {#if confirmationSuppression}
+      <span class="demande">Supprimer « {nom} » ?</span>
+      <button type="button" class="bouton" onclick={() => (confirmationSuppression = false)}>Garder</button>
+      <button type="button" class="bouton bouton--principal" onclick={supprimer}>Confirmer</button>
+    {:else}
+      <button type="button" class="bouton" onclick={onfermer}>Annuler</button>
+      <button type="button" class="bouton bouton--principal" disabled={!peutEnregistrer} onclick={enregistrer}>
+        Enregistrer
+      </button>
+    {/if}
   {/snippet}
 </Modale>
 
@@ -123,6 +136,8 @@
     border: 1px solid var(--trait); border-radius: 999px; padding: 0.05em 0.55em;
   }
   .deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.9rem; }
+  .demande { margin-right: auto; font-size: 0.92rem; align-self: center; }
+  .retirer { margin-right: auto; }
 
   .bascule {
     display: flex;

@@ -14,6 +14,7 @@
   import { moyenneMobile, sensEvolution, BANDE_INCERTITUDE_KG } from '$lib/domain/tendance'
   import { champsActifs } from '$lib/domain/champs'
   import { formaterValeurChamp } from '$lib/domain/valeurs'
+  import { formaterDosage } from '$lib/domain/traitements'
   import type { DefinitionChamp, TypeObjectif } from '$lib/domain/types'
 
   interface Props {
@@ -258,6 +259,19 @@
       </section>
     {/if}
 
+    {#if carnet.rappelsTraitementDuJour.length > 0}
+      <!-- B6, K12 : repli PWA d'un rappel de prise — un message à l'ouverture,
+           uniquement pour les traitements dont le rappel a été demandé. -->
+      <section class="carte note-douce" role="status">
+        <p>Prises prévues aujourd'hui :</p>
+        <ul class="rappels">
+          {#each carnet.rappelsTraitementDuJour as t (t.id)}
+            <li>{formaterDosage(t)} — {t.heuresRappel.join(', ')}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
     {#if rappelDu}
       <section class="carte note-douce" role="status">
         <p>
@@ -327,4 +341,6 @@
     border-color: var(--bleu-trait);
     font-size: 0.95rem;
   }
+  .rappels { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+  .rappels li { margin-bottom: 0.15rem; }
 </style>

@@ -26,7 +26,7 @@ import { comparerMesures, detecterPerteRapide, serie, variationParJour } from '.
 import { trierEvenements } from '../domain/evenements'
 import { jalonsDeRegularite, estAnniversaireCarnet, anneesDeCarnet } from '../domain/jalons'
 import { calculerRepereActivite } from '../domain/activite'
-import { traitementsEnCours } from '../domain/traitements'
+import { traitementsEnCours, rappelsDuJour } from '../domain/traitements'
 import { construireCarnet } from '../io/sauvegarde'
 
 /** Délai pendant lequel une suppression reste annulable (K8). */
@@ -684,6 +684,11 @@ class EtatCarnet {
 
   get traitementsEnCours() {
     return traitementsEnCours(this.traitements, versISO(new Date()))
+  }
+
+  /** B6 : les prises du jour pour lesquelles un rappel a été explicitement demandé. */
+  get rappelsTraitementDuJour() {
+    return rappelsDuJour(this.traitements, versISO(new Date()))
   }
 }
 
