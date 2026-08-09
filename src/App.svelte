@@ -10,6 +10,7 @@
   import { carnet } from '$lib/etat/carnet.svelte'
   import { pwa } from '$lib/etat/pwa.svelte'
   import { sauvegardeAuto } from '$lib/etat/sauvegardeAuto.svelte'
+  import { webdav } from '$lib/etat/webdav.svelte'
   import Bienvenue from './vues/Bienvenue.svelte'
   import Accueil from './vues/Accueil.svelte'
   import Historique from './vues/Historique.svelte'
@@ -99,6 +100,7 @@
     carnet.charger()
     pwa.initialiser()
     sauvegardeAuto.charger()
+    webdav.charger()
     vue = lireAncre()
 
     const surAncre = () => { vue = lireAncre() }

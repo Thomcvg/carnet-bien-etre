@@ -53,15 +53,25 @@ est bien écrite, bien testée, et demandée par des utilisateurs.
 6. **L'accessibilité n'est pas une phase finale.** Chaque lot est livré accessible
    (§ 13) : contraste AA vérifié, navigation clavier complète, aucune information
    portée par la seule couleur.
-7. **Aucune connexion réseau sans action explicite.** Une seule fonctionnalité sort
-   de l'appareil : la météo (§ 11.8, règle 18). Elle est désactivée par défaut, et
-   son activation énonce ce qui sera transmis **avant** de le transmettre — les
-   coordonnées d'une commune choisie, arrondies à environ un kilomètre, et rien
-   d'autre. Aucun identifiant, aucune donnée du carnet, aucun historique de
-   requête. Tout le reste, y compris les objectifs, les exports et les
-   graphiques, fonctionne sans réseau. Les deux seuls appels du projet tiennent
-   dans `src/lib/io/meteo.ts`, et ce fichier ne fait que cela : cette règle n'a
-   de valeur que si elle reste vérifiable d'un coup d'œil.
+7. **Aucune connexion réseau sans action explicite.** Deux fonctionnalités
+   seulement sortent de l'appareil, et elles ne se ressemblent pas.
+
+   - **La météo** (§ 11.8, règle 18) interroge un service tiers. Désactivée par
+     défaut, son activation énonce ce qui sera transmis **avant** de le
+     transmettre : les coordonnées d'une commune choisie, arrondies à environ un
+     kilomètre, et rien d'autre. Aucun identifiant, aucune donnée du carnet,
+     aucun historique de requête.
+   - **La synchronisation WebDAV** (§ 11.7) dépose le carnet sur un serveur que
+     la personne nomme et contrôle. Elle n'est jamais automatique : deux gestes,
+     envoyer et récupérer. En cas de divergence entre deux appareils,
+     l'application montre les deux versions et laisse choisir — elle ne fusionne
+     jamais en silence. Les identifiants restent sur l'appareil et ne figurent
+     dans aucun export.
+
+   Tout le reste — objectifs, graphiques, exports, impression — fonctionne sans
+   réseau. Ces deux portes tiennent dans `src/lib/io/meteo.ts` et
+   `src/lib/io/webdav.ts`, et ces fichiers ne font que cela : la règle n'a de
+   valeur que si elle reste vérifiable d'un coup d'œil.
 
 ## Pour proposer une fonctionnalité
 

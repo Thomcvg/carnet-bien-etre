@@ -13,9 +13,10 @@
   import { carnet } from '$lib/etat/carnet.svelte'
   import { pwa } from '$lib/etat/pwa.svelte'
   import { sauvegardeAuto } from '$lib/etat/sauvegardeAuto.svelte'
+  import { webdav } from '$lib/etat/webdav.svelte'
   import { analyserNombre, formaterNombre } from '$lib/domain/unites'
   import { CLE_TAILLE, champsDeCategorie, estDernierChampActif } from '$lib/domain/champs'
-  import { versISO } from '$lib/domain/dates'
+  import { formaterDate, versISO } from '$lib/domain/dates'
   import { depuisJson, lireFichier, telechargerCsv, telechargerXlsx, telechargerJson } from '$lib/io/sauvegarde'
   import { chercherCommune } from '$lib/io/meteo'
   import { VERSION_SCHEMA } from '$lib/domain/migrations'
@@ -34,7 +35,12 @@
   let taille = $state('')
   let anneeNaissance = $state('')
   let messageImport = $state<{ ton: 'ok' | 'probleme'; texte: string } | null>(null)
-  let importEnAttente = $state<{ carnet: Carnet; nomFichier: string } | null>(null)
+  let importEnAttente = $state<{
+    carnet: Carnet
+    nomFichier: string
+    /** D'où vient le carnet : cela décide de ce qu'on note après l'avoir écrit. */
+    origine: 'fichier' | 'webdav'
+  } | null>(null)
   let confirmationEffacement = $state(false)
   let saisieEffacement = $state('')
   let champPersonnaliseOuvert = $state(false)
@@ -42,6 +48,45 @@
   let traitementModaleOuverte = $state(false)
   let traitementEnEdition = $state<string | null>(null)
   let nouveauProfilOuvert = $state(false)
+
+  /* ---------------- synchronisation WebDAV (§ 11.7) ---------------- */
+
+  let davUrl = $state('')
+  let davIdentifiant = $state('')
+  let davMotDePasse = $state('')
+  let davFichier = $state('carnet-bien-etre.json')
+
+  async function enregistrerWebdav() {
+    await webdav.configurer({
+      urlDossier: davUrl,
+      identifiant: davIdentifiant,
+      motDePasse: davMotDePasse,
+      nomFichier: davFichier,
+    })
+    // Le mot de passe ne reste pas dans un champ de formulaire après coup.
+    davMotDePasse = ''
+  }
+
+  /** Le carnet du serveur remplace celui-ci — après la confirmation habituelle. */
+  function garderLeServeur() {
+    const d = webdav.divergence
+    if (!d) return
+    webdav.annulerDivergence()
+    importEnAttente = { carnet: d.distant, nomFichier: 'le carnet du serveur', origine: 'webdav' }
+  }
+
+  /** Celui-ci écrase le serveur : le choix est déjà fait, on n'en redemande pas. */
+  async function garderCetAppareil() {
+    webdav.annulerDivergence()
+    await webdav.envoyer(carnet.exporter(), { forcer: true })
+  }
+
+  async function demarrerRecuperation() {
+    const distant = await webdav.recuperer()
+    // Même exigence que pour un fichier : récupérer remplace tout, donc on
+    // annonce ce qui va remplacer quoi avant que rien ne soit écrit (§ 11.5).
+    if (distant) importEnAttente = { carnet: distant, nomFichier: 'le carnet du serveur', origine: 'webdav' }
+  }
 
   /* ---------------- météo (§ 11.8) ---------------- */
 
@@ -160,7 +205,7 @@
     messageImport = null
     try {
       const texte = await lireFichier(fichier)
-      importEnAttente = { carnet: depuisJson(texte), nomFichier: fichier.name }
+      importEnAttente = { carnet: depuisJson(texte), nomFichier: fichier.name, origine: 'fichier' }
     } catch (erreur) {
       messageImport = {
         ton: 'probleme',
@@ -176,6 +221,9 @@
     if (!en) return
     importEnAttente = null
     await carnet.importer(en.carnet)
+    // Après une récupération, cet appareil sait de nouveau ce que porte le
+    // serveur : sans cette note, le prochain envoi croirait à une divergence.
+    if (en.origine === 'webdav') await webdav.marquerRecupere(en.carnet)
     messageImport = {
       ton: 'ok',
       texte: `Carnet restauré : ${en.carnet.mesures.length} mesure${en.carnet.mesures.length > 1 ? 's' : ''}.`,
@@ -601,6 +649,102 @@
     {/if}
   </section>
 
+  <!--
+    L8, § 11.7. Deux gestes explicites, jamais de synchronisation de fond : le
+    § 11.7 interdit de fusionner en silence, et un envoi automatique reviendrait
+    à trancher une divergence sans personne pour le faire.
+  -->
+  <section class="carte pile gap-m">
+    <h2>Synchronisation Nextcloud</h2>
+
+    {#if !webdav.disponible}
+      <p class="aide">
+        Cette fonctionnalité n'existe que dans l'application Android. Dans un
+        navigateur, une page n'a pas le droit d'écrire directement sur un serveur
+        Nextcloud, et Nextcloud ne lève pas cette restriction par défaut — c'est
+        une limite du navigateur, pas un réglage à trouver.
+      </p>
+      <p class="aide">
+        Sur ordinateur, la sauvegarde automatique ci-dessus rend le même service :
+        choisissez un fichier situé dans un dossier déjà synchronisé par le client
+        Nextcloud.
+      </p>
+    {:else if !webdav.configuree}
+      <div class="encart-reseau">
+        <p>
+          Le carnet entier est déposé sur <strong>votre</strong> serveur, sous forme
+          d'un fichier JSON — celui-là même que produit l'export.
+        </p>
+        <p>
+          <strong>Utilisez un mot de passe d'application</strong>, créé dans les
+          réglages de sécurité de Nextcloud, plutôt que celui de votre compte : il
+          se révoque seul, sans toucher au reste.
+        </p>
+      </div>
+
+      <div class="champ">
+        <label for="dav-url">Adresse du dossier WebDAV</label>
+        <input id="dav-url" type="url" bind:value={davUrl}
+          placeholder="https://nuage.exemple.fr/remote.php/dav/files/moi/Carnet" />
+      </div>
+      <div class="deux">
+        <div class="champ">
+          <label for="dav-identifiant">Identifiant</label>
+          <input id="dav-identifiant" type="text" bind:value={davIdentifiant} autocomplete="off" />
+        </div>
+        <div class="champ">
+          <label for="dav-motdepasse">Mot de passe d'application</label>
+          <input id="dav-motdepasse" type="password" bind:value={davMotDePasse} autocomplete="off" />
+        </div>
+      </div>
+      <div class="champ">
+        <label for="dav-fichier">Nom du fichier</label>
+        <input id="dav-fichier" type="text" bind:value={davFichier} />
+      </div>
+
+      <button type="button" class="bouton bouton--principal"
+        disabled={!davUrl.trim() || !davIdentifiant.trim() || !davMotDePasse}
+        onclick={enregistrerWebdav}>
+        Enregistrer ces réglages
+      </button>
+      <p class="aide">
+        Ils restent sur cet appareil et ne figurent dans aucune sauvegarde exportée.
+      </p>
+    {:else}
+      <p>
+        Configuré pour <strong>{webdav.identifiant}</strong> — fichier
+        « {webdav.nomFichier} ».
+      </p>
+      {#if webdav.derniereReussite}
+        <p class="aide">
+          Dernier échange réussi le
+          {formaterDate(webdav.derniereReussite.slice(0, 10), profil.formatDate)}.
+        </p>
+      {:else}
+        <p class="aide">Aucun échange effectué pour l'instant.</p>
+      {/if}
+
+      <div class="actions">
+        <button type="button" class="bouton bouton--principal" disabled={webdav.occupe}
+          onclick={() => webdav.envoyer(carnet.exporter())}>
+          {webdav.occupe ? 'En cours…' : 'Envoyer sur le serveur'}
+        </button>
+        <button type="button" class="bouton" disabled={webdav.occupe} onclick={demarrerRecuperation}>
+          Récupérer depuis le serveur
+        </button>
+        <button type="button" class="bouton" onclick={() => webdav.oublier()}>
+          Oublier ces réglages
+        </button>
+      </div>
+
+      {#if webdav.message}
+        <p class="message" class:message--probleme={webdav.message.ton === 'probleme'} role="status">
+          {webdav.message.texte}
+        </p>
+      {/if}
+    {/if}
+  </section>
+
   <section class="carte pile gap-m zone-sensible">
     <h2>Effacer ce carnet</h2>
     <p class="aide">
@@ -744,6 +888,59 @@
       <button type="button" class="bouton" onclick={() => (importEnAttente = null)}>Annuler</button>
       <button type="button" class="bouton bouton--principal" onclick={confirmerImport}>
         Restaurer
+      </button>
+    {/snippet}
+  </Modale>
+{/if}
+
+{#if webdav.divergence}
+  <!--
+    § 11.7 : « l'application ne fusionne pas silencieusement. Elle présente les
+    deux versions avec leurs dates et laisse choisir. » Les deux options écrasent
+    quelque chose ; aucune n'est proposée comme la bonne.
+  -->
+  <Modale ouverte={true} titre="Deux versions différentes" onfermer={() => webdav.annulerDivergence()}>
+    <div class="pile gap-s">
+      <p>
+        {#if webdav.divergence.motif === 'origine-inconnue'}
+          Un carnet se trouve déjà sur le serveur, et cet appareil n'y a encore
+          jamais rien déposé.
+        {:else}
+          Le carnet du serveur a changé depuis votre dernier échange : un autre
+          appareil est passé entre-temps.
+        {/if}
+      </p>
+
+      <dl class="grille-bilan">
+        <div>
+          <dt>Sur le serveur</dt>
+          <dd>
+            {webdav.divergence.nbMesuresDistantes} mesure{webdav.divergence.nbMesuresDistantes > 1 ? 's' : ''},
+            enregistré le
+            {formaterDate(webdav.divergence.distant.exporteLe.slice(0, 10), carnet.profil?.formatDate ?? 'jj/mm/aaaa')}
+          </dd>
+        </div>
+        <div>
+          <dt>Sur cet appareil</dt>
+          <dd>
+            {webdav.divergence.nbMesuresLocales} mesure{webdav.divergence.nbMesuresLocales > 1 ? 's' : ''}
+          </dd>
+        </div>
+      </dl>
+
+      <p class="aide">
+        Les deux versions ne peuvent pas être réunies : le carnet est un tout. Ce
+        que vous ne gardez pas sera remplacé.
+      </p>
+    </div>
+
+    {#snippet pied()}
+      <button type="button" class="bouton" onclick={() => webdav.annulerDivergence()}>Annuler</button>
+      <button type="button" class="bouton" onclick={garderLeServeur}>
+        Garder celle du serveur
+      </button>
+      <button type="button" class="bouton" onclick={garderCetAppareil}>
+        Garder celle de cet appareil
       </button>
     {/snippet}
   </Modale>

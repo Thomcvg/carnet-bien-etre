@@ -37,7 +37,30 @@ export interface ParametreProfilActif {
   profilId: string
 }
 
-export type ParametreLocal = ParametreSauvegardeAuto | ParametreProfilActif
+/**
+ * Synchronisation WebDAV (L8, § 11.7).
+ *
+ * Ces réglages sont **délibérément** ici et non dans le `Profil` : ils contiennent
+ * un identifiant et un mot de passe, et le `Profil` part dans l'export JSON. Un
+ * carnet sauvegardé, transmis à un proche ou déposé sur une clé emporterait
+ * sinon de quoi écrire sur le Nextcloud de son propriétaire.
+ *
+ * `versionSynchronisee` retient l'horodatage `exporteLe` de la version que cet
+ * appareil a échangée en dernier avec le serveur. C'est lui qui permet de
+ * détecter qu'un autre appareil est passé entre-temps — et donc de demander
+ * plutôt que de fusionner en silence (§ 11.7).
+ */
+export interface ParametreWebdav {
+  id: 'webdav'
+  urlDossier: string
+  identifiant: string
+  motDePasse: string
+  nomFichier: string
+  versionSynchronisee?: string
+  derniereReussite?: string
+}
+
+export type ParametreLocal = ParametreSauvegardeAuto | ParametreProfilActif | ParametreWebdav
 
 export function idChamp(profilId: string, cle: string): string {
   return `${profilId}:${cle}`
