@@ -2,8 +2,10 @@
   /**
    * Saisie d'une mesure (§ 5.2).
    *
-   * L'exigence tenue ici : une mesure valide ne demande **qu'une date et un poids**.
-   * Tout le reste est replié, et le bouton d'enregistrement s'active dès le poids saisi.
+   * L'exigence tenue ici : une mesure valide ne demande **qu'une date et une
+   * seule valeur**, quelle qu'elle soit. Tout le reste est replié, et le bouton
+   * d'enregistrement s'active dès qu'un champ est renseigné — le poids compris,
+   * mais pas le poids seulement, depuis qu'il se désactive comme les autres.
    *
    * Deux familles de valeurs cohabitent : les champs numériques et texte transitent
    * par `saisies` (chaînes de caractères, comme au lot 1) ; les champs à échelle,

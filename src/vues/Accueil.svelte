@@ -113,7 +113,15 @@
   {#if carnet.nombreMesures === 0}
     <section class="carte accueil-vide">
       <h2>Votre carnet est prêt</h2>
-      <p>Enregistrez une première mesure : la date et le poids suffisent.</p>
+      <p>
+        {#if suitPoids}
+          Enregistrez une première mesure : la date et le poids suffisent.
+        {:else}
+          <!-- Promettre le poids à quelqu'un qui ne le suit pas décrirait une
+               autre application que la sienne (§ 3). -->
+          Enregistrez une première mesure : la date et une seule valeur suffisent.
+        {/if}
+      </p>
       <button type="button" class="bouton bouton--principal" onclick={onnouvelleMesure}>
         + Nouvelle mesure
       </button>
