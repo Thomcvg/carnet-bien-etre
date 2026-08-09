@@ -35,6 +35,15 @@
   let traitementEnEdition = $state<string | null>(null)
   let nouveauProfilOuvert = $state(false)
 
+  /**
+   * Composée ici plutôt que dans le gabarit : Svelte élague les espaces en tête
+   * de bloc, et « 1.1.0(071819d) » se lisait mal. L'empreinte manque quand la
+   * compilation n'a pas eu accès au dépôt (voir `vite.config.ts`).
+   */
+  const versionAffichee = __EMPREINTE_APP__
+    ? `${__VERSION_APP__} (${__EMPREINTE_APP__})`
+    : __VERSION_APP__
+
   const CATEGORIES: { valeur: CategorieChamp; libelle: string }[] = [
     { valeur: 'corps', libelle: 'Corps' },
     { valeur: 'sante', libelle: 'Santé' },
@@ -494,7 +503,15 @@
     </p>
     <p class="aide">
       Logiciel libre sous licence AGPL-3.0-or-later. Aucun traceur, aucune publicité,
-      aucune mesure d'audience. Schéma de données version {VERSION_SCHEMA}.
+      aucune mesure d'audience.
+    </p>
+    <!--
+      Le numéro de version se lit ici et nulle part ailleurs. Sans lui, deux
+      personnes qui décrivent le même problème ne parlent pas forcément de la
+      même application, et rien ne permet de le savoir.
+    -->
+    <p class="aide">
+      Version {versionAffichee} — schéma de données version {VERSION_SCHEMA}.
     </p>
 
     {#if pwa.peutInstaller}

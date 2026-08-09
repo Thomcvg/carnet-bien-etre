@@ -2,8 +2,35 @@ import { defineConfig } from 'vitest/config'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
+import { execFileSync } from 'node:child_process'
+import { createRequire } from 'node:module'
+
+const paquet = createRequire(import.meta.url)('./package.json') as { version: string }
+
+/**
+ * Empreinte du dépôt au moment de la compilation.
+ *
+ * Pendant une phase d'essai, deux personnes qui décrivent le même problème ne
+ * parlent pas forcément de la même application : sans repère affiché, rien ne
+ * permet de savoir laquelle est installée. `package.json` donne la version
+ * lisible, le dépôt donne le détail qui la désambiguïse.
+ *
+ * Le dépôt peut être absent — une archive téléchargée n'a pas de `.git`. Ce
+ * n'est pas une erreur de compilation : on s'en passe.
+ */
+function empreinteDepot(): string {
+  try {
+    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim()
+  } catch {
+    return ''
+  }
+}
 
 export default defineConfig({
+  define: {
+    __VERSION_APP__: JSON.stringify(paquet.version),
+    __EMPREINTE_APP__: JSON.stringify(empreinteDepot()),
+  },
   plugins: [
     svelte(),
     VitePWA({

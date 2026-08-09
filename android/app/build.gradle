@@ -1,5 +1,54 @@
 apply plugin: 'com.android.application'
 
+import groovy.json.JsonSlurper
+
+// --------------------------------------------------------------------------
+// Version de l'application — une seule source, `package.json`.
+//
+// `versionName` est ce que la personne lit dans les réglages d'Android.
+// `versionCode` est ce qu'Android compare pour accepter une mise à jour : il
+// doit croître strictement, sans quoi le téléphone refuse d'installer par-dessus
+// et impose une désinstallation — donc la perte des données locales si aucune
+// sauvegarde n'a été exportée. C'était le cas tant qu'il valait 1.
+//
+// Il est dérivé du nombre de commits du dépôt, qui ne peut que croître, et non
+// de la version sémantique : pendant une phase d'essai, plusieurs compilations
+// se succèdent sans que le numéro de version change, et elles doivent tout de
+// même s'installer les unes sur les autres. La version sémantique sert de
+// plancher, pour qu'un « 1.2.0 » ne puisse jamais passer sous un « 1.1.0 ».
+//
+// Sans dépôt git (archive téléchargée), on retombe sur ce seul plancher.
+// --------------------------------------------------------------------------
+
+def paquet = new JsonSlurper().parse(file("$rootDir/../package.json"))
+def versionLisible = paquet.version
+
+// Les paliers laissent 999 compilations entre deux correctifs, ce qui est très
+// au-delà de ce qu'une phase d'essai consomme, et reste loin du plafond
+// d'Android (2 100 000 000) jusqu'à une version majeure 200.
+def plancherVersion = {
+    def (majeur, mineur, correctif) = versionLisible.tokenize('.').collect { it.toInteger() }
+    majeur * 10000000 + mineur * 100000 + correctif * 1000
+}()
+
+def compteCommits = {
+    try {
+        // `ProcessBuilder` plutôt que la tâche `exec` de Gradle : on est ici au
+        // moment de la configuration, où l'appeler est déprécié.
+        def processus = new ProcessBuilder('git', 'rev-list', '--count', 'HEAD')
+            .directory(file("$rootDir/.."))
+            .redirectErrorStream(true)
+            .start()
+        def sortie = processus.inputStream.text.trim()
+        processus.waitFor()
+        return processus.exitValue() == 0 ? sortie.toInteger() : 0
+    } catch (ignored) {
+        return 0
+    }
+}()
+
+def codeVersion = plancherVersion + compteCommits
+
 android {
     namespace = "org.carnetbienetre.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +56,8 @@ android {
         applicationId "org.carnetbienetre.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode codeVersion
+        versionName versionLisible
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
