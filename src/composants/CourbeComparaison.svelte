@@ -167,8 +167,8 @@
   .etiquette-x { text-anchor: middle; }
 
   .ligne { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
-  .style-0 { stroke: var(--sauge-texte); }
-  .style-1 { stroke: var(--bleu-texte); }
+  .style-0 { stroke: var(--accent-texte); }
+  .style-1 { stroke: var(--second-texte); }
   .style-2 { stroke: var(--attention); }
   .style-3 { stroke: var(--encre); }
 
@@ -182,8 +182,8 @@
   }
   .cle { display: inline-flex; align-items: center; gap: 0.35em; }
   .cle::before { content: ''; width: 1.3em; height: 0; border-top-width: 2.5px; border-top-style: solid; }
-  .cle.style-0::before { border-color: var(--sauge-texte); }
-  .cle.style-1::before { border-color: var(--bleu-texte); border-top-style: dashed; }
+  .cle.style-0::before { border-color: var(--accent-texte); }
+  .cle.style-1::before { border-color: var(--second-texte); border-top-style: dashed; }
   .cle.style-2::before { border-color: var(--attention); border-top-style: dotted; border-top-width: 3px; }
   .cle.style-3::before { border-color: var(--encre); border-top-style: double; border-top-width: 3px; }
 

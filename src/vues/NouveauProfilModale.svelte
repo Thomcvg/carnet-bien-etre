@@ -90,7 +90,7 @@
     background: var(--carte);
     cursor: pointer;
   }
-  .option--actif { border-color: var(--sauge-trait); background: var(--sauge-voile); }
-  .option:has(input:focus-visible) { outline: 3px solid var(--bleu); outline-offset: 2px; }
+  .option--actif { border-color: var(--accent-trait); background: var(--accent-voile); }
+  .option:has(input:focus-visible) { outline: 3px solid var(--second); outline-offset: 2px; }
   .option input { width: 1.15rem; height: 1.15rem; }
 </style>

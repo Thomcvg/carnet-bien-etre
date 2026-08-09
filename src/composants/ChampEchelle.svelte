@@ -78,10 +78,10 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
-  .niveau:hover { border-color: var(--sauge); }
+  .niveau:hover { border-color: var(--accent); }
   .niveau--actif {
-    background: var(--sauge-voile);
-    border-color: var(--sauge-texte);
-    color: var(--sauge-texte);
+    background: var(--accent-voile);
+    border-color: var(--accent-texte);
+    color: var(--accent-texte);
   }
 </style>

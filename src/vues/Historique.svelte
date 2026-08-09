@@ -229,7 +229,7 @@
     font: inherit;
     color: var(--encre);
   }
-  .puce:hover { border-color: var(--sauge); }
+  .puce:hover { border-color: var(--accent); }
   .puce-date { font-size: 0.85rem; color: var(--encre-2); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
   .puce-libelle { font-weight: 600; margin-right: auto; }
   .puce-type {
@@ -276,9 +276,9 @@
   }
   .etiquette {
     font-size: 0.78rem;
-    color: var(--bleu-texte);
-    background: var(--bleu-voile);
-    border: 1px solid var(--bleu-trait);
+    color: var(--second-texte);
+    background: var(--second-voile);
+    border: 1px solid var(--second-trait);
     border-radius: 999px;
     padding: 0.1em 0.6em;
   }
@@ -287,7 +287,7 @@
     margin-top: 0.45rem;
     font-size: 0.9rem;
     color: var(--encre-2);
-    border-left: 3px solid var(--sauge-trait);
+    border-left: 3px solid var(--accent-trait);
     padding-left: 0.6rem;
   }
 
@@ -299,8 +299,8 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-    background: var(--bleu-voile);
-    border: 1px solid var(--bleu-trait);
+    background: var(--second-voile);
+    border: 1px solid var(--second-trait);
     border-radius: var(--rayon);
     padding: 0.7rem 0.9rem;
   }

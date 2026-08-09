@@ -33,14 +33,14 @@
 <style>
   .piste {
     height: 0.85rem;
-    background: var(--sauge-voile);
-    border: 1px solid var(--sauge-trait);
+    background: var(--accent-voile);
+    border: 1px solid var(--accent-trait);
     border-radius: 999px;
     overflow: hidden;
   }
   .remplissage {
     height: 100%;
-    background: var(--sauge-texte);
+    background: var(--accent-texte);
     border-radius: 999px;
     transition: width 0.3s ease;
   }

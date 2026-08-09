@@ -254,24 +254,24 @@
   .etiquette-y { text-anchor: end; }
   .etiquette-x { text-anchor: middle; }
 
-  .zone-objectif { fill: var(--sauge-voile); }
-  .bande-incertitude { fill: var(--bleu); opacity: 0.1; }
+  .zone-objectif { fill: var(--accent-voile); }
+  .bande-incertitude { fill: var(--second); opacity: 0.1; }
 
   .tendance {
     fill: none;
-    stroke: var(--bleu);
+    stroke: var(--second);
     stroke-width: 2;
     stroke-dasharray: 5 4;
     stroke-linecap: round;
   }
   .ligne {
     fill: none;
-    stroke: var(--sauge-texte);
+    stroke: var(--accent-texte);
     stroke-width: 2.5;
     stroke-linejoin: round;
     stroke-linecap: round;
   }
-  .point { fill: var(--sauge-texte); }
+  .point { fill: var(--accent-texte); }
 
   .legende {
     display: flex;
@@ -289,15 +289,15 @@
     border-top-width: 3px;
     border-top-style: solid;
   }
-  .cle--reel::before { border-color: var(--sauge-texte); }
-  .cle--tendance::before { border-top-style: dashed; border-color: var(--bleu); }
-  .cle--objectif::before { border-top-width: 0.7em; border-color: var(--sauge-voile); }
+  .cle--reel::before { border-color: var(--accent-texte); }
+  .cle--tendance::before { border-top-style: dashed; border-color: var(--second); }
+  .cle--objectif::before { border-top-width: 0.7em; border-color: var(--accent-voile); }
   .cle--evenement::before { border-top-style: dotted; border-top-width: 2px; border-color: var(--encre-3); }
 
   .annotation-trait { stroke: var(--encre-3); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.7; }
   .annotation-point { fill: var(--carte); stroke: var(--encre-3); stroke-width: 1.5; }
   .annotation:hover .annotation-trait,
-  .annotation:hover .annotation-point { opacity: 1; stroke: var(--bleu-texte); }
+  .annotation:hover .annotation-point { opacity: 1; stroke: var(--second-texte); }
 
   .aide-evenements { margin-top: 0.4rem; font-size: 0.78rem; color: var(--encre-3); }
 

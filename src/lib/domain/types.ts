@@ -156,6 +156,21 @@ export interface Traitement {
  * cas d'usage, pas le calcul ; il a été renommé avant qu'aucune donnée ne le porte
  * (migration 4 → 5, sans effet en pratique).
  */
+/**
+ * Palettes de teintes (M9). La sauge est celle du § 14 et reste le défaut ;
+ * les autres n'existent que pour l'agrément, et aucune ne touche aux fonds ni à
+ * l'encre — voir l'en-tête de `app.css`.
+ */
+export type PaletteCouleurs = 'sauge' | 'ardoise' | 'terre' | 'lavande' | 'brume'
+
+export const PALETTES: { valeur: PaletteCouleurs; libelle: string; detail: string }[] = [
+  { valeur: 'sauge', libelle: 'Sauge', detail: 'Vert doux et bleu — la teinte d’origine.' },
+  { valeur: 'ardoise', libelle: 'Ardoise', detail: 'Bleu-gris et terre cuite.' },
+  { valeur: 'terre', libelle: 'Terre', detail: 'Argile et olive.' },
+  { valeur: 'lavande', libelle: 'Lavande', detail: 'Violet doux et vert d’eau.' },
+  { valeur: 'brume', libelle: 'Brume', detail: 'Presque sans couleur.' },
+]
+
 export type TypeObjectif = 'cible' | 'fourchette' | 'maintien' | 'regularite'
 
 export type PeriodeRegularite = 'semaine' | 'mois'
@@ -212,6 +227,13 @@ export interface Profil {
   mode: ModeAffichage
   usage: UsageDeclare
   theme: 'auto' | 'clair' | 'sombre' | 'contraste'
+  /**
+   * Teinte de l'interface (M9), indépendante de la clarté ci-dessus.
+   *
+   * Optionnelle : un carnet enregistré avant l'existence des palettes n'en porte
+   * pas, et retombe sur la sauge du § 14 — aucune migration nécessaire.
+   */
+  palette?: PaletteCouleurs
   taillePolice: 100 | 125 | 150 | 200
   modeSansChiffre: boolean
   /**

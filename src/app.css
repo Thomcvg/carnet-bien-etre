@@ -1,25 +1,41 @@
 /**
  * Système visuel — § 14 (design) et § 13 (accessibilité).
  *
- * Palette : vert sauge, gris clair, beige clair, blanc, touche de bleu doux.
+ * Palette de référence : vert sauge, gris clair, beige clair, blanc, touche de
+ * bleu doux. C'est celle du § 14, et elle reste le défaut.
  *
- * Contrainte ajoutée au § 14 : un vert sauge clair sur fond clair n'atteint pas
- * le seuil de contraste AA. Les teintes qui portent du texte sont donc déclinées
- * en version assombrie (`-texte`), tandis que les teintes claires ne servent
- * qu'aux fonds et aux bordures.
+ * **Deux réglages indépendants**, à ne pas confondre :
+ *  - `data-theme` décide de la *clarté* — clair, sombre, ou contraste élevé ;
+ *  - `data-palette` décide de la *teinte* (M9), et ne touche qu'à `--accent` et
+ *    `--second`. Les fonds, l'encre et les traits n'en dépendent jamais : c'est
+ *    ce qui garantit qu'aucune palette ne peut casser la lisibilité.
+ *
+ * Les teintes portaient les noms `--sauge` et `--bleu` tant qu'il n'y avait
+ * qu'une palette. Dès lors qu'on peut en choisir une autre, un jeton nommé
+ * `--sauge` rendant du lavande est un mensonge : ils s'appellent `--accent` et
+ * `--second`.
+ *
+ * Contrainte ajoutée au § 14 : une teinte claire sur fond clair n'atteint pas le
+ * seuil de contraste AA. Les teintes qui portent du texte sont donc déclinées en
+ * version assombrie (`-texte`), tandis que les teintes claires ne servent qu'aux
+ * fonds et aux bordures. Chaque palette respecte cette règle dans les deux modes.
  */
 
 :root {
-  /* Surfaces et traits */
-  --sauge:         #6d8a71;
-  --sauge-texte:   #4a6450;   /* ≥ 4,5:1 sur --papier */
-  --sauge-voile:   #e7ece6;
-  --sauge-trait:   #c7d5c7;
+  /* Indique au navigateur quels modes la page sait rendre : les contrôles
+     natifs, les barres de défilement et `light-dark()` s'y accordent. */
+  color-scheme: light dark;
 
-  --bleu:          #4f7ba6;
-  --bleu-texte:    #38618a;
-  --bleu-voile:    #e4eef6;
-  --bleu-trait:    #b6cee2;
+  /* Surfaces et traits */
+  --accent:         #6d8a71;
+  --accent-texte:   #4a6450;   /* ≥ 4,5:1 sur --papier */
+  --accent-voile:   #e7ece6;
+  --accent-trait:   #c7d5c7;
+
+  --second:          #4f7ba6;
+  --second-texte:    #38618a;
+  --second-voile:    #e4eef6;
+  --second-trait:    #b6cee2;
 
   --beige:         #f2efe7;
 
@@ -48,8 +64,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sauge: #9bbb9f; --sauge-texte: #a9c6ad; --sauge-voile: #222a23; --sauge-trait: #3a463b;
-    --bleu: #83aad0; --bleu-texte: #96bade; --bleu-voile: #1a242f; --bleu-trait: #34506c;
+    --accent: #9bbb9f; --accent-texte: #a9c6ad; --accent-voile: #222a23; --accent-trait: #3a463b;
+    --second: #83aad0; --second-texte: #96bade; --second-voile: #1a242f; --second-trait: #34506c;
     --beige: #1e211d;
     --encre: #e7eae5; --encre-2: #a9b3ac; --encre-3: #8b958e;
     --papier: #131614; --carte: #1a1e1b; --trait: #2a2f2b;
@@ -59,8 +75,9 @@
 }
 
 :root[data-theme='sombre'] {
-  --sauge: #9bbb9f; --sauge-texte: #a9c6ad; --sauge-voile: #222a23; --sauge-trait: #3a463b;
-  --bleu: #83aad0; --bleu-texte: #96bade; --bleu-voile: #1a242f; --bleu-trait: #34506c;
+  color-scheme: dark;
+  --accent: #9bbb9f; --accent-texte: #a9c6ad; --accent-voile: #222a23; --accent-trait: #3a463b;
+  --second: #83aad0; --second-texte: #96bade; --second-voile: #1a242f; --second-trait: #34506c;
   --beige: #1e211d;
   --encre: #e7eae5; --encre-2: #a9b3ac; --encre-3: #8b958e;
   --papier: #131614; --carte: #1a1e1b; --trait: #2a2f2b;
@@ -69,13 +86,91 @@
 }
 
 :root[data-theme='clair'] {
-  --sauge: #6d8a71; --sauge-texte: #4a6450; --sauge-voile: #e7ece6; --sauge-trait: #c7d5c7;
-  --bleu: #4f7ba6; --bleu-texte: #38618a; --bleu-voile: #e4eef6; --bleu-trait: #b6cee2;
+  color-scheme: light;
+  --accent: #6d8a71; --accent-texte: #4a6450; --accent-voile: #e7ece6; --accent-trait: #c7d5c7;
+  --second: #4f7ba6; --second-texte: #38618a; --second-voile: #e4eef6; --second-trait: #b6cee2;
   --beige: #f2efe7;
   --encre: #232724; --encre-2: #515c55; --encre-3: #616b64;
   --papier: #f7f6f2; --carte: #ffffff; --trait: #e0e2db;
   --attention: #8a6320; --attention-fond: #faf1e0;
   --ombre: 0 1px 2px rgb(35 39 36 / 5%), 0 10px 28px -20px rgb(35 39 36 / 30%);
+}
+
+/* --------------------------------------------------------------------------
+   Palettes de teintes (M9)
+   --------------------------------------------------------------------------
+   Une palette ne redéfinit que `--accent` et `--second`. Elle ne touche ni au
+   papier, ni à l'encre, ni aux traits : changer de couleur ne peut donc pas
+   dégrader la lisibilité, seulement l'ambiance.
+
+   `light-dark()` choisit selon le `color-scheme` effectif, ce qui évite de
+   dupliquer chaque palette en deux blocs et de rejouer la bataille de
+   spécificité entre le thème choisi et la préférence du système. Un navigateur
+   qui ne connaîtrait pas la fonction ignore ces déclarations et garde la palette
+   sauge — une dégradation sans casse.
+
+   Ces blocs viennent **avant** le thème contraste, qui doit rester le dernier
+   mot : il existe pour la lisibilité, pas pour le goût.
+   -------------------------------------------------------------------------- */
+
+/* Sauge — la palette du § 14, définie explicitement pour qu'on puisse y revenir. */
+:root[data-palette='sauge'] {
+  --accent:       light-dark(#6d8a71, #9bbb9f);
+  --accent-texte: light-dark(#4a6450, #a9c6ad);
+  --accent-voile: light-dark(#e7ece6, #222a23);
+  --accent-trait: light-dark(#c7d5c7, #3a463b);
+  --second:       light-dark(#4f7ba6, #83aad0);
+  --second-texte: light-dark(#38618a, #96bade);
+  --second-voile: light-dark(#e4eef6, #1a242f);
+  --second-trait: light-dark(#b6cee2, #34506c);
+}
+
+/* Ardoise — bleu-gris et terre cuite. */
+:root[data-palette='ardoise'] {
+  --accent:       light-dark(#5f7d94, #8fb0c8);
+  --accent-texte: light-dark(#3d566b, #a2c0d6);
+  --accent-voile: light-dark(#e5ecf1, #1a2530);
+  --accent-trait: light-dark(#c2d2de, #33475a);
+  --second:       light-dark(#a9664c, #d79a7f);
+  --second-texte: light-dark(#8a4c34, #e0aa92);
+  --second-voile: light-dark(#f7e9e2, #2b1f19);
+  --second-trait: light-dark(#e6c9bb, #4d372c);
+}
+
+/* Terre — argile et olive. */
+:root[data-palette='terre'] {
+  --accent:       light-dark(#9c6b4a, #cfa27f);
+  --accent-texte: light-dark(#74492c, #dcb494);
+  --accent-voile: light-dark(#f3e9e0, #2a211a);
+  --accent-trait: light-dark(#ddc6b3, #4a3a2d);
+  --second:       light-dark(#77854a, #b3c07f);
+  --second-texte: light-dark(#576330, #c2cd94);
+  --second-voile: light-dark(#eef0e2, #23261a);
+  --second-trait: light-dark(#cfd6b8, #3f4630);
+}
+
+/* Lavande — violet doux et vert d'eau. */
+:root[data-palette='lavande'] {
+  --accent:       light-dark(#7c6a9e, #b3a3d1);
+  --accent-texte: light-dark(#5a4b78, #c0b2da);
+  --accent-voile: light-dark(#ece7f3, #241f2e);
+  --accent-trait: light-dark(#cfc4e0, #40374f);
+  --second:       light-dark(#4a8c88, #7fc4bf);
+  --second-texte: light-dark(#316663, #93cfca);
+  --second-voile: light-dark(#e2f0ef, #172625);
+  --second-trait: light-dark(#b5d8d5, #2e4d4a);
+}
+
+/* Brume — presque sans couleur, pour qui n'en veut pas. */
+:root[data-palette='brume'] {
+  --accent:       light-dark(#6b7a80, #a3b1b7);
+  --accent-texte: light-dark(#465358, #b0bdc2);
+  --accent-voile: light-dark(#eaeef0, #1c2124);
+  --accent-trait: light-dark(#c9d2d6, #363e42);
+  --second:       light-dark(#5d7f8c, #92b3bf);
+  --second-texte: light-dark(#3d5a65, #a3c1cb);
+  --second-voile: light-dark(#e6eef1, #182226);
+  --second-trait: light-dark(#bed3da, #2f4249);
 }
 
 /* Contraste élevé (J2) : on pousse les valeurs, on ne change pas la structure. */
@@ -85,8 +180,9 @@
    pour rendre les repères plus lisibles. Les teintes ci-dessous gardent un
    contraste supérieur à 15:1 avec l'encre noire. */
 :root[data-theme='contraste'] {
-  --sauge: #2f4a35; --sauge-texte: #1d3323; --sauge-voile: #dbe4dc; --sauge-trait: #1d3323;
-  --bleu: #14416e; --bleu-texte: #0d2f52; --bleu-voile: #dde8f2; --bleu-trait: #0d2f52;
+  color-scheme: light;
+  --accent: #2f4a35; --accent-texte: #1d3323; --accent-voile: #dbe4dc; --accent-trait: #1d3323;
+  --second: #14416e; --second-texte: #0d2f52; --second-voile: #dde8f2; --second-trait: #0d2f52;
   --beige: #ffffff;
   --encre: #000000; --encre-2: #1a1a1a; --encre-3: #2b2b2b;
   --papier: #ffffff; --carte: #ffffff; --trait: #000000;
@@ -131,7 +227,7 @@ h3 { font-size: 1.05rem; }
 p { margin: 0; }
 
 :focus-visible {
-  outline: 3px solid var(--bleu);
+  outline: 3px solid var(--second);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -155,21 +251,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
   text-decoration: none;
   transition: border-color 0.12s, background 0.12s;
 }
-.bouton:hover { border-color: var(--sauge); }
+.bouton:hover { border-color: var(--accent); }
 .bouton:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .bouton--principal {
-  background: var(--sauge-texte);
-  border-color: var(--sauge-texte);
+  background: var(--accent-texte);
+  border-color: var(--accent-texte);
   color: var(--papier);
   font-weight: 600;
 }
-.bouton--principal:hover { filter: brightness(1.12); border-color: var(--sauge-texte); }
+.bouton--principal:hover { filter: brightness(1.12); border-color: var(--accent-texte); }
 :root[data-theme='sombre'] .bouton--principal,
 :root[data-theme='contraste'] .bouton--principal { color: var(--papier); }
 
 .bouton--discret { border-color: transparent; background: transparent; color: var(--encre-2); }
-.bouton--discret:hover { background: var(--sauge-voile); color: var(--encre); }
+.bouton--discret:hover { background: var(--accent-voile); color: var(--encre); }
 
 .carte {
   background: var(--carte);
@@ -193,7 +289,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   width: 100%;
 }
 .champ input:focus-visible, .champ select:focus-visible, .champ textarea:focus-visible {
-  border-color: var(--bleu);
+  border-color: var(--second);
 }
 .champ .aide { font-size: 0.82rem; color: var(--encre-3); }
 

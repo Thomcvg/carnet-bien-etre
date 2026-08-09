@@ -137,14 +137,14 @@
 
   .barre-actions { display: flex; justify-content: space-between; gap: 0.6rem; margin-bottom: 1.2rem; }
 
-  .entete-fiche { margin-bottom: 1.2rem; border-bottom: 2px solid var(--sauge-texte); padding-bottom: 0.8rem; }
+  .entete-fiche { margin-bottom: 1.2rem; border-bottom: 2px solid var(--accent-texte); padding-bottom: 0.8rem; }
   .entete-fiche h1 { font-size: 1.5rem; }
   .genere { color: var(--encre-2); font-size: 0.88rem; margin-top: 0.3rem; }
 
   .bloc { margin-bottom: 1.3rem; break-inside: avoid; }
   .bloc h2 {
     font-size: 1rem; font-family: var(--sans); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em; color: var(--sauge-texte);
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-texte);
     margin-bottom: 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--trait);
   }
 
@@ -162,8 +162,8 @@
   .note-sans-chiffre {
     margin-top: 0.9rem;
     padding: 0.6rem 0.8rem;
-    background: var(--bleu-voile);
-    border: 1px solid var(--bleu-trait);
+    background: var(--second-voile);
+    border: 1px solid var(--second-trait);
     border-radius: var(--rayon-s);
     font-size: 0.85rem;
     color: var(--encre-2);

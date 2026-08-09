@@ -90,9 +90,9 @@
     gap: 0.55rem;
     padding: 0.6rem 0.8rem;
     border-radius: var(--rayon-s);
-    background: var(--sauge-voile);
-    border: 1px solid var(--sauge-trait);
+    background: var(--accent-voile);
+    border: 1px solid var(--accent-trait);
     font-size: 0.95rem;
   }
-  .pastille { color: var(--sauge-texte); }
+  .pastille { color: var(--accent-texte); }
 </style>

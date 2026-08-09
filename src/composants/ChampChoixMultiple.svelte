@@ -50,6 +50,6 @@
     cursor: pointer;
     font-size: 0.9rem;
   }
-  .option:has(input:checked) { background: var(--sauge-voile); border-color: var(--sauge-texte); }
+  .option:has(input:checked) { background: var(--accent-voile); border-color: var(--accent-texte); }
   .option input { width: 1rem; height: 1rem; }
 </style>

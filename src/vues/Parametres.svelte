@@ -19,7 +19,14 @@
   import { depuisJson, lireFichier, telechargerCsv, telechargerXlsx, telechargerJson } from '$lib/io/sauvegarde'
   import { VERSION_SCHEMA } from '$lib/domain/migrations'
   import { traitementEnCours } from '$lib/domain/traitements'
-  import type { Carnet, CategorieChamp, DefinitionChamp } from '$lib/domain/types'
+  import { PALETTES } from '$lib/domain/types'
+  import type { Carnet, CategorieChamp, DefinitionChamp, PaletteCouleurs } from '$lib/domain/types'
+
+  interface Props {
+    /** J11 : « passable à tout moment » suppose de pouvoir y revenir. */
+    onrevoirVisite: () => void
+  }
+  let { onrevoirVisite }: Props = $props()
 
   const profil = $derived(carnet.profil)
 
@@ -236,6 +243,21 @@
           <option value="clair">Clair</option>
           <option value="sombre">Sombre</option>
           <option value="contraste">Contraste élevé</option>
+        </select>
+        {#if profil.theme === 'contraste'}
+          <p class="aide">Le contraste élevé impose ses couleurs : la teinte choisie ne s'y applique pas.</p>
+        {/if}
+      </div>
+
+      <!-- M9 : la teinte est un réglage distinct de la clarté. Elle ne touche
+           qu'aux accents — les fonds et le texte ne changent jamais. -->
+      <div class="champ">
+        <label for="p-palette">Teinte</label>
+        <select id="p-palette" value={profil.palette ?? 'sauge'}
+          onchange={(e) => carnet.majProfil({ palette: e.currentTarget.value as PaletteCouleurs })}>
+          {#each PALETTES as p (p.valeur)}
+            <option value={p.valeur}>{p.libelle} — {p.detail}</option>
+          {/each}
         </select>
       </div>
 
@@ -514,6 +536,10 @@
       Version {versionAffichee} — schéma de données version {VERSION_SCHEMA}.
     </p>
 
+    <button type="button" class="bouton" onclick={onrevoirVisite}>
+      Revoir la visite guidée
+    </button>
+
     {#if pwa.peutInstaller}
       <button type="button" class="bouton installer" onclick={() => pwa.installer()}>
         Installer l'application sur cet appareil
@@ -625,7 +651,7 @@
     border: 1px solid var(--trait); border-radius: 999px;
     padding: 0.05em 0.5em; margin-left: 0.4em;
   }
-  .fixe--perso { color: var(--sauge-texte); border-color: var(--sauge-trait); }
+  .fixe--perso { color: var(--accent-texte); border-color: var(--accent-trait); }
 
   .sous-categorie h3 {
     font-family: var(--sans); font-size: 0.82rem; font-weight: 600;
@@ -667,11 +693,11 @@
     font: inherit;
     color: var(--encre);
   }
-  .traitement:hover { border-color: var(--sauge); }
+  .traitement:hover { border-color: var(--accent); }
   .traitement-nom { margin-right: auto; }
   .traitement-etat {
-    font-size: 0.78rem; color: var(--sauge-texte);
-    border: 1px solid var(--sauge-trait); background: var(--sauge-voile);
+    font-size: 0.78rem; color: var(--accent-texte);
+    border: 1px solid var(--accent-trait); background: var(--accent-voile);
     border-radius: 999px; padding: 0.1em 0.6em;
   }
   .traitement-etat--termine { color: var(--encre-3); border-color: var(--trait); background: transparent; }
@@ -692,12 +718,12 @@
     cursor: pointer;
     font: inherit;
   }
-  .profil-item:hover { border-color: var(--sauge); }
-  .profil-item--actif { background: var(--sauge-voile); border-color: var(--sauge-trait); font-weight: 600; cursor: default; }
+  .profil-item:hover { border-color: var(--accent); }
+  .profil-item--actif { background: var(--accent-voile); border-color: var(--accent-trait); font-weight: 600; cursor: default; }
   .profil-actif-etiquette {
     margin-left: auto;
-    font-size: 0.75rem; color: var(--sauge-texte);
-    border: 1px solid var(--sauge-trait); border-radius: 999px; padding: 0.1em 0.6em;
+    font-size: 0.75rem; color: var(--accent-texte);
+    border: 1px solid var(--accent-trait); border-radius: 999px; padding: 0.1em 0.6em;
   }
 
   .ajouter-profil-discret {
@@ -709,8 +735,8 @@
   .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 
   .message {
-    background: var(--sauge-voile);
-    border: 1px solid var(--sauge-trait);
+    background: var(--accent-voile);
+    border: 1px solid var(--accent-trait);
     border-radius: var(--rayon-s);
     padding: 0.6rem 0.8rem;
     font-size: 0.92rem;

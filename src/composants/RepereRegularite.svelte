@@ -61,7 +61,7 @@
 
   .detail { color: var(--encre-2); font-size: 0.87rem; }
   /* L'information ne tient pas à la seule couleur : le mot « atteint » la porte (§ 13). */
-  .atteint { color: var(--sauge-texte); font-weight: 600; }
+  .atteint { color: var(--accent-texte); font-weight: 600; }
 
   .attente { color: var(--encre-3); font-size: 0.9rem; }
 </style>

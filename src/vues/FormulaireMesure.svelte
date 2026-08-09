@@ -499,7 +499,7 @@
     padding: 0.1em 0.4em;
     font-size: inherit;
     text-decoration: underline;
-    color: var(--bleu-texte);
+    color: var(--second-texte);
   }
 
   .repliable { border-top: 1px solid var(--trait); padding-top: 0.6rem; }
@@ -515,8 +515,8 @@
   .champs-varies { margin-top: 0.6rem; }
 
   .doublon {
-    background: var(--bleu-voile);
-    border: 1px solid var(--bleu-trait);
+    background: var(--second-voile);
+    border: 1px solid var(--second-trait);
     border-radius: var(--rayon-s);
     padding: 0.7rem 0.85rem;
     font-size: 0.92rem;

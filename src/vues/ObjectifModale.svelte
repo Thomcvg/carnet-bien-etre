@@ -527,8 +527,8 @@
     background: var(--carte);
     cursor: pointer;
   }
-  .option--actif { border-color: var(--sauge-trait); background: var(--sauge-voile); }
-  .option:has(input:focus-visible) { outline: 3px solid var(--bleu); outline-offset: 2px; }
+  .option--actif { border-color: var(--accent-trait); background: var(--accent-voile); }
+  .option:has(input:focus-visible) { outline: 3px solid var(--second); outline-offset: 2px; }
   .option input { grid-area: radio; width: 1.15rem; height: 1.15rem; }
   .titre { grid-area: titre; font-weight: 600; }
   .explication { grid-area: explication; font-size: 0.87rem; color: var(--encre-2); }
@@ -554,8 +554,8 @@
     font-size: 0.92rem;
   }
   .segment input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .segment--actif { background: var(--sauge-voile); border-color: var(--sauge-trait); font-weight: 600; }
-  .segment:has(input:focus-visible) { outline: 3px solid var(--bleu); outline-offset: 2px; }
+  .segment--actif { background: var(--accent-voile); border-color: var(--accent-trait); font-weight: 600; }
+  .segment:has(input:focus-visible) { outline: 3px solid var(--second); outline-offset: 2px; }
 
   .valeurs { display: flex; gap: 0.9rem; flex-wrap: wrap; }
   .valeurs .champ { flex: 1 1 8rem; }

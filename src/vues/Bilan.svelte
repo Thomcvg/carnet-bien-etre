@@ -377,12 +377,12 @@
   }
 
   .jauge-activite { margin-top: 0.5rem; }
-  .piste-activite { height: 0.75rem; background: var(--sauge-voile); border: 1px solid var(--sauge-trait); border-radius: 999px; overflow: hidden; }
-  .remplissage-activite { height: 100%; background: var(--sauge-texte); border-radius: 999px; transition: width 0.3s ease; }
+  .piste-activite { height: 0.75rem; background: var(--accent-voile); border: 1px solid var(--accent-trait); border-radius: 999px; overflow: hidden; }
+  .remplissage-activite { height: 100%; background: var(--accent-texte); border-radius: 999px; transition: width 0.3s ease; }
 
   .anniversaire {
-    background: var(--sauge-voile);
-    border: 1px solid var(--sauge-trait);
+    background: var(--accent-voile);
+    border: 1px solid var(--accent-trait);
     border-radius: var(--rayon-s);
     padding: 0.6rem 0.8rem;
     font-weight: 600;
@@ -392,5 +392,5 @@
   .jalons { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
   .jalons li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.92rem; color: var(--encre-3); }
   .jalons li.jalon--atteint { color: var(--encre); }
-  .jalon-puce { color: var(--sauge-texte); width: 1em; text-align: center; }
+  .jalon-puce { color: var(--accent-texte); width: 1em; text-align: center; }
 </style>

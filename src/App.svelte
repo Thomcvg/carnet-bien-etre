@@ -19,6 +19,7 @@
   import Parametres from './vues/Parametres.svelte'
   import FormulaireMesure from './vues/FormulaireMesure.svelte'
   import ObjectifModale from './vues/ObjectifModale.svelte'
+  import VisiteGuidee from './vues/VisiteGuidee.svelte'
   import type { TypeObjectif } from '$lib/domain/types'
 
   type Vue = 'accueil' | 'historique' | 'graphiques' | 'bilan' | 'fiche-medecin' | 'parametres'
@@ -43,6 +44,7 @@
   let objectifOuvert = $state(false)
   let objectifTypeInitial = $state<TypeObjectif | undefined>(undefined)
   let objectifChampInitial = $state<string | undefined>(undefined)
+  let visiteOuverte = $state(false)
 
   function ouvrirObjectif(type?: TypeObjectif, champCle?: string) {
     objectifTypeInitial = type
@@ -117,6 +119,8 @@
     if (!p) return
     if (p.theme === 'auto') racine.removeAttribute('data-theme')
     else racine.setAttribute('data-theme', p.theme)
+    // M9 : la teinte est un réglage à part, qui ne dépend pas de la clarté.
+    racine.setAttribute('data-palette', p.palette ?? 'sauge')
     racine.setAttribute('data-echelle', String(p.taillePolice))
   })
 
@@ -148,7 +152,14 @@
 {#if carnet.chargement}
   <p class="chargement" role="status">Ouverture du carnet…</p>
 {:else if carnet.premierLancement}
-  <Bienvenue ontermine={() => aller('accueil')} />
+  <Bienvenue ontermine={() => { aller('accueil'); visiteOuverte = true }} />
+{:else if visiteOuverte}
+  <!--
+    J11 : la visite suit la première configuration, et n'est jamais reproposée
+    d'elle-même. Elle reste accessible depuis les paramètres — « passable à tout
+    moment » suppose de pouvoir y revenir, sans quoi la passer serait irréversible.
+  -->
+  <VisiteGuidee onterminer={() => (visiteOuverte = false)} />
 {:else}
   <a class="saut" href="#contenu">Aller au contenu</a>
 
@@ -186,7 +197,7 @@
       {:else if vue === 'fiche-medecin'}
         <FicheMedecin onretour={() => aller('bilan')} />
       {:else}
-        <Parametres />
+        <Parametres onrevoirVisite={() => (visiteOuverte = true)} />
       {/if}
     </main>
 
@@ -228,7 +239,7 @@
     background: var(--carte);
     color: var(--encre);
     padding: 0.7rem 1rem;
-    border: 2px solid var(--bleu);
+    border: 2px solid var(--second);
     border-radius: var(--rayon-s);
     z-index: 100;
   }
@@ -269,8 +280,8 @@
     gap: 1rem;
     flex-wrap: wrap;
     padding: 0.6rem 1rem;
-    background: var(--bleu-voile);
-    border-bottom: 1px solid var(--bleu-trait);
+    background: var(--second-voile);
+    border-bottom: 1px solid var(--second-trait);
     font-size: 0.9rem;
   }
   .bandeau-maj .bouton { min-height: 2.4rem; padding: 0.3em 0.9em; }
@@ -311,13 +322,13 @@
     font-size: 0.92rem;
     border-top: 3px solid transparent;
   }
-  .onglet:hover { background: var(--sauge-voile); color: var(--encre); }
+  .onglet:hover { background: var(--accent-voile); color: var(--encre); }
   /* L'onglet actif se signale par la couleur ET par le trait ET par aria-current (§ 13). */
   .onglet--actif {
-    color: var(--sauge-texte);
+    color: var(--accent-texte);
     font-weight: 600;
-    border-top-color: var(--sauge-texte);
-    background: var(--sauge-voile);
+    border-top-color: var(--accent-texte);
+    background: var(--accent-voile);
   }
 
   @media (min-width: 40rem) {

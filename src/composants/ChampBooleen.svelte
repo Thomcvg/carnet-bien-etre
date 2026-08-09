@@ -41,6 +41,6 @@
     color: var(--encre);
     cursor: pointer;
   }
-  .option:hover { border-color: var(--sauge); }
-  .option--actif { background: var(--sauge-voile); border-color: var(--sauge-texte); color: var(--sauge-texte); font-weight: 600; }
+  .option:hover { border-color: var(--accent); }
+  .option--actif { background: var(--accent-voile); border-color: var(--accent-texte); color: var(--accent-texte); font-weight: 600; }
 </style>

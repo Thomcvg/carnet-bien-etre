@@ -414,7 +414,7 @@
     min-height: auto;
     padding: 0.1em 0.35em;
     text-decoration: underline;
-    color: var(--bleu-texte);
+    color: var(--second-texte);
   }
 
   section h2 { margin-bottom: 0.7rem; }
@@ -426,8 +426,8 @@
   .mention-legale { color: var(--encre-3); font-size: 0.82rem; margin-top: 0.7rem; }
 
   .note-douce {
-    background: var(--bleu-voile);
-    border-color: var(--bleu-trait);
+    background: var(--second-voile);
+    border-color: var(--second-trait);
     font-size: 0.95rem;
   }
   .rappels { margin: 0.4rem 0 0; padding-left: 1.2rem; }
