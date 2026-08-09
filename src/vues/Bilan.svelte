@@ -11,8 +11,10 @@
    */
   import { carnet } from '$lib/etat/carnet.svelte'
   import {
-    mensurationsActives, champsActifs, CLE_POIDS, CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT,
+    mensurationsActives, champsActifs, trouverChamp,
+    CLE_POIDS, CLE_ACTIVITE_DUREE, CLE_RENFORCEMENT,
   } from '$lib/domain/champs'
+  import { enonceObjectif } from '$lib/domain/valeurs'
   import { bilanChamp } from '$lib/domain/bilan'
   import { serie, variationsMensuelles, sensEvolution } from '$lib/domain/tendance'
   import { evenementsSurPeriode } from '$lib/domain/evenements'
@@ -30,7 +32,8 @@
   const sansChiffre = $derived(profil?.modeSansChiffre ?? false)
 
   const bilanPoids = $derived(carnet.bilanPoids)
-  const objectif = $derived(carnet.objectif)
+  const objectif = $derived(carnet.objectifPoids)
+  const champPoids = $derived(trouverChamp(carnet.champs, CLE_POIDS))
   const sensDepuisLeDebut = $derived(
     bilanPoids.evolution === null ? null : sensEvolution(bilanPoids.evolution),
   )
@@ -164,7 +167,7 @@
         </p>
         {#if objectif}
           <p class="detail">
-            {carnet.progression?.atteint
+            {carnet.progressionPoids?.atteint
               ? 'Vous êtes dans votre objectif.'
               : 'Vous n\'êtes pas encore dans votre objectif.'}
           </p>
@@ -183,16 +186,13 @@
         {#if bilanPoids.evolution !== null}
           <div><dt>Évolution totale</dt><dd class="nombre">{formaterEvolution(masseVersAffichage(bilanPoids.evolution, unite), 1, unite)}</dd></div>
         {/if}
-        {#if objectif?.valeurMin !== undefined}
-          <div>
-            <dt>Objectif</dt>
-            <dd class="nombre">
-              {formaterNombre(masseVersAffichage(objectif.valeurMin, unite))}{#if objectif.valeurMax !== undefined && objectif.valeurMax !== objectif.valeurMin}–{formaterNombre(masseVersAffichage(objectif.valeurMax, unite))}{/if} {unite}
-            </dd>
-          </div>
+        {#if objectif && champPoids}
+          <!-- `enonceObjectif` couvre les quatre formes : une fourchette, une
+               cible, un maintien et une régularité ne se disent pas pareil. -->
+          <div><dt>Objectif</dt><dd>{enonceObjectif(objectif, champPoids, unite)}</dd></div>
         {/if}
-        {#if carnet.progression?.restant != null}
-          <div><dt>Distance restante</dt><dd class="nombre">{formaterNombre(masseVersAffichage(carnet.progression.restant, unite))} {unite}</dd></div>
+        {#if carnet.progressionPoids?.restant != null}
+          <div><dt>Distance restante</dt><dd class="nombre">{formaterNombre(masseVersAffichage(carnet.progressionPoids.restant, unite))} {unite}</dd></div>
         {/if}
       </dl>
       {/if}

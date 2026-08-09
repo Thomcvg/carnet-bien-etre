@@ -91,9 +91,15 @@
   const tendance = $derived(moyenneMobile(points))
   const variations = $derived(variationsMensuelles(points).slice(-12))
 
+  /**
+   * La bande d'objectif suit la courbe affichée : chaque donnée peut désormais
+   * porter le sien. Un objectif de régularité n'en a pas — il ne délimite pas une
+   * plage à tenir mais compte des occurrences, ce qu'une bande horizontale
+   * représenterait à contresens.
+   */
   const zoneObjectif = $derived.by(() => {
-    const o = carnet.objectif
-    if (!o || champ?.cle !== o.champCle || o.valeurMin === undefined) return null
+    const o = champ ? carnet.objectifDe(champ.cle) : undefined
+    if (!o || o.type === 'regularite' || o.valeurMin === undefined) return null
     return {
       min: Math.min(o.valeurMin, o.valeurMax ?? o.valeurMin),
       max: Math.max(o.valeurMin, o.valeurMax ?? o.valeurMin),

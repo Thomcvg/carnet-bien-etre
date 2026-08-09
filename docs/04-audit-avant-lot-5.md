@@ -622,3 +622,97 @@ Rien de bloquant. Trois points connus, assumés :
    cela demanderait un environnement DOM et des dépendances supplémentaires.
 3. **La météo (§ 11.8)** reste la seule porte réseau prévue par le cahier des
    charges, et n'est pas implémentée. Aucune requête réseau n'existe à ce jour.
+
+---
+
+## 12. L'objectif cesse d'être un objectif de poids
+
+Point de départ : *« le seul objectif est un poids. Certaines personnes pourraient
+vouloir se fixer des objectifs autres — un nombre d'heures de sommeil par semaine,
+une diminution de l'essoufflement à l'effort. »*
+
+Le constat était juste, et le code lui donnait déjà à moitié raison :
+`Objectif.champCle` existait depuis le premier jour, avec le commentaire
+*« `poids` dans l'immense majorité des cas, mais pas toujours (F4) »*, et
+`TypeObjectif` portait une quatrième valeur `comportemental` que rien n'écrivait.
+Le § 9.1 du cahier des charges décrivait F4 en toutes lettres. L'idée n'était donc
+pas neuve : elle était **inachevée**, restée à l'état de champ dans le modèle.
+
+### 12.1 — Trois familles, dont deux implémentées
+
+La vraie question n'était pas *quel champ* mais **quelle forme d'objectif**.
+
+- **Niveau** (`cible`, `fourchette`, `maintien`) — la valeur elle-même dérive vers
+  une plage. La formule du § 7.4 ne bouge pas d'une ligne ; elle est simplement
+  appliquée à la série du champ visé au lieu de celle du poids.
+- **Régularité** (`regularite`) — une condition remplie un certain nombre de fois
+  par période. C'est le F4, et c'est un moteur entièrement distinct.
+- **Conditionnel** — « l'essoufflement *lors d'un effort intense* ». **Écarté, et
+  documenté comme tel.** Il faudrait filtrer un champ par la valeur d'un autre,
+  ce qui suppose que les deux soient saisis dans la même mesure — rien ne le
+  garantit — et ouvrirait la porte à ce que la charte refuse explicitement :
+  *« expliquer une donnée par une autre »*. Le moteur de champs répond déjà mieux
+  à la question : créer un champ personnalisé « Essoufflement après effort
+  intense » et ne le remplir que les jours concernés pose la condition **au moment
+  de la saisie, par la personne qui sait**, au lieu de la deviner après coup. Cela
+  redevient un objectif de niveau ordinaire, pour zéro complexité de moteur.
+
+### 12.2 — Le dénominateur, seul vrai point difficile
+
+« Marcher trois fois par semaine ». L'implémentation naïve compte les jours
+conformes sur sept et affiche « 2/7 ».
+
+Elle affirme du même coup que cinq journées n'ont rien vu, alors qu'elles n'ont
+peut-être pas été saisies. C'est très exactement ce qu'interdit la règle 2 de la
+charte — *une donnée absente n'est jamais zéro, jamais interpolée, jamais traitée
+comme une erreur* — et cela transformerait le carnet en machine à culpabiliser,
+ce que la troisième question du guide de contribution exclut.
+
+Le décompte porte donc sur les **jours documentés** : « 3 fois sur les 5 jours
+notés ». Sans jour noté, rien ne s'affiche (règle 14). Il n'y a ni série à ne pas
+rompre, ni décompte de ce qui manque, ni couleur d'alerte : un repère se situe,
+il ne se réussit pas (§ 8.3).
+
+### 12.3 — Conséquences structurantes
+
+- **Plusieurs objectifs actifs**, au plus un par champ. Sans cela, se fixer un
+  objectif de sommeil aurait fait perdre celui de poids : une régression déguisée
+  en fonctionnalité.
+- **Un objectif dont le champ est désactivé se tait sans être supprimé.**
+  Réactiver le champ le fait réapparaître tel quel.
+- **Les deux garde-fous du poids restent au poids.** Le seuil de 1 % par semaine
+  (F6) décrit ce que le corps encaisse en perdant de la masse ; appliqué à des
+  heures de sommeil il ne voudrait rien dire. Idem pour l'avertissement d'IMC.
+- **La valeur courante d'une échelle est lissée.** Un mauvais jour de stress
+  faisait reculer la jauge de 40 % sans que rien n'ait changé.
+- **`comportemental` renommé `regularite`** (migration 4 → 5). Le mot décrivait le
+  cas d'usage, pas le calcul. Aucune version publiée ne l'a jamais écrit : le
+  renommage coûtait zéro aujourd'hui, une migration dans six mois.
+
+### 12.4 — Trouvés en vérifiant, sans rapport avec les objectifs
+
+Trois défauts que seul l'essai en navigateur pouvait révéler.
+
+- **Restaurer une sauvegarde ne faisait plus rien.** Depuis que l'écran des
+  paramètres retient le fichier lu dans un `$state` le temps de la confirmation,
+  le carnet devenait un proxy Svelte de part en part — et `structuredClone`, donc
+  IndexedDB, refuse les proxys. La transaction avortait **en silence** : aucune
+  donnée écrite, aucun message. `importer()` prend désormais un instantané en
+  entrée. Même défaut latent dans l'annulation d'une suppression, pour une mesure
+  portant une tension ou une liste de choix : corrigé de même.
+- **La confirmation de restauration n'était jamais affichée**, même quand l'import
+  réussissait : `charger()` bascule `chargement`, qui remplace toute l'interface
+  et démonte donc l'écran qui s'apprêtait à parler. `charger({ silencieux: true })`
+  après un import.
+- **Le mode sans chiffre laissait passer « Reste 3,2 kg »** sous la jauge. La part
+  parcourue n'est pas un poids et peut rester ; la distance restante en est un.
+
+### 12.5 — Vérifié en conditions réelles
+
+Sur un carnet jetable portant quatre objectifs simultanés (poids en fourchette,
+sommeil et renforcement en régularité, stress au plus 2) : affichage des deux
+familles côte à côte, bascule d'un champ à l'autre dans la modale, création,
+modification et retrait d'un objectif, désactivation d'un champ porteur, mode sans
+chiffre, aller-retour export → import complet avec tension et choix multiples
+préservés. Le carnet réel n'a été touché à aucun moment, ce qui a été contrôlé
+ligne à ligne après chaque manipulation.

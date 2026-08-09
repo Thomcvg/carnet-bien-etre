@@ -21,7 +21,7 @@
 import type {
   DefinitionChamp, Mesure, TypeChamp, CategorieChamp, UniteChamp, UsageDeclare,
 } from './types'
-import { masseVersAffichage, type UniteMasse } from './unites'
+import { masseVersAffichage, masseVersStockage, type UniteMasse } from './unites'
 
 /**
  * Le poids est le champ central du carnet, et il est **désactivable comme les
@@ -225,6 +225,37 @@ export function champAffiche(champ: DefinitionChamp, uniteMasse: UniteMasse): De
 /** Vrai si les valeurs de ce champ sont stockées en kilogrammes. */
 export function estChampMasse(cle: string): boolean {
   return cle === CLE_POIDS
+}
+
+/**
+ * Les deux sens de la conversion, pour une valeur isolée d'un champ quelconque.
+ *
+ * Tout ce qui n'est pas une masse se stocke déjà dans son unité d'affichage :
+ * la conversion est alors l'identité. Le nommer ainsi plutôt que de laisser
+ * chaque appelant tester `cle === 'poids'` est ce qui empêche la question de se
+ * reposer à chaque nouvel écran — c'est de cet oubli-là qu'était né le défaut de
+ * saisie en livres (règle 16).
+ */
+export function valeurVersAffichage(
+  champ: DefinitionChamp,
+  valeur: number,
+  uniteMasse: UniteMasse,
+): number {
+  return estChampMasse(champ.cle) ? masseVersAffichage(valeur, uniteMasse) : valeur
+}
+
+export function valeurVersStockage(
+  champ: DefinitionChamp,
+  valeur: number,
+  uniteMasse: UniteMasse,
+): number {
+  return estChampMasse(champ.cle) ? masseVersStockage(valeur, uniteMasse) : valeur
+}
+
+/** L'unité à écrire à côté d'une valeur. Vide pour un champ qui n'en a pas. */
+export function uniteAffichee(champ: DefinitionChamp, uniteMasse: UniteMasse): string {
+  if (estChampMasse(champ.cle)) return uniteMasse
+  return champ.unite ?? ''
 }
 
 /* -------------------------------------------------------------------- */

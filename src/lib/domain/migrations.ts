@@ -19,7 +19,7 @@
 import type { Carnet } from './types'
 
 /** Version courante du schéma. À incrémenter avec toute migration ajoutée. */
-export const VERSION_SCHEMA = 4
+export const VERSION_SCHEMA = 5
 
 /** Forme non encore validée, telle qu'elle sort d'un fichier ou de la base. */
 export type CarnetBrut = Record<string, unknown> & { versionSchema?: unknown }
@@ -37,6 +37,22 @@ export const MIGRATIONS: Record<number, Migration> = {
   1: (c) => ({ ...c, evenements: [] }),
   2: (c) => ({ ...c, reflexions: [] }),
   3: (c) => ({ ...c, traitements: [] }),
+  // Premier renommage d'une valeur déjà écrite dans un fichier — et l'occasion de
+  // vérifier que le mécanisme sait faire autre chose qu'ajouter une liste vide.
+  // Aucune version publiée n'a jamais écrit `comportemental` (le type existait
+  // dans le modèle, aucune interface ne le produisait), donc la migration ne
+  // transformera vraisemblablement rien. C'est justement pour cela qu'elle est
+  // écrite maintenant plutôt que dans six mois.
+  4: (c) => ({
+    ...c,
+    objectifs: Array.isArray(c.objectifs)
+      ? c.objectifs.map((o) =>
+          o !== null && typeof o === 'object' && (o as { type?: unknown }).type === 'comportemental'
+            ? { ...(o as object), type: 'regularite' }
+            : o,
+        )
+      : c.objectifs,
+  }),
 }
 
 export class CarnetTropRecentError extends Error {

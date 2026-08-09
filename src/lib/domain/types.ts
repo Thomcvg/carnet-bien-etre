@@ -141,7 +141,30 @@ export interface Traitement {
   heuresRappel: string[]
 }
 
-export type TypeObjectif = 'cible' | 'fourchette' | 'maintien' | 'comportemental'
+/**
+ * Deux familles d'objectif, qui ne se calculent pas du tout de la même façon.
+ *
+ *  - **niveau** (`cible`, `fourchette`, `maintien`) : la valeur du champ elle-même
+ *    dérive lentement vers une plage — poids, tour de taille, tension. La
+ *    progression se mesure sur le chemin parcouru depuis le point de départ.
+ *  - **régularité** (`regularite`, le F4 du cahier des charges) : chaque saisie
+ *    remplit ou non une condition, et ce qui compte est le *nombre de fois* sur
+ *    une période — « dormir 7 h, cinq nuits sur sept ». Il n'y a pas de point de
+ *    départ, donc pas de progression au sens précédent.
+ *
+ * `regularite` s'appelait `comportemental` dans le schéma 4. Le mot décrivait le
+ * cas d'usage, pas le calcul ; il a été renommé avant qu'aucune donnée ne le porte
+ * (migration 4 → 5, sans effet en pratique).
+ */
+export type TypeObjectif = 'cible' | 'fourchette' | 'maintien' | 'regularite'
+
+export type PeriodeRegularite = 'semaine' | 'mois'
+
+export interface CritereRegularite {
+  /** Nombre de jours conformes visé sur la période. */
+  occurrences: number
+  periode: PeriodeRegularite
+}
 
 export interface Objectif {
   id: string
@@ -149,9 +172,19 @@ export interface Objectif {
   type: TypeObjectif
   /** Champ visé. `poids` dans l'immense majorité des cas, mais pas toujours (F4). */
   champCle: string
+  /**
+   * Bornes de l'objectif, dans l'unité de stockage du champ.
+   *
+   * Pour un objectif de niveau, elles délimitent la plage visée et sont toujours
+   * fournies toutes les deux (une cible unique les met à la même valeur).
+   * Pour un objectif de régularité, elles expriment la condition à remplir et
+   * peuvent être unilatérales : « au moins 7 h » ne renseigne que `valeurMin`.
+   */
   valeurMin?: number
   valeurMax?: number
   dateCible?: DateISO
+  /** Type `regularite` uniquement : combien de fois, sur quelle période. */
+  regularite?: CritereRegularite
   actif: boolean
   creeLe: HorodatageISO
 }

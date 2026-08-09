@@ -51,6 +51,21 @@ describe('migrer — migrations réelles depuis le lot 1', () => {
     const c = migrer(carnetV1({ mesures }))
     expect(c.mesures).toHaveLength(1)
   })
+
+  it('renomme le type d\'objectif « comportemental » en « regularite » (4 → 5)', () => {
+    // Première migration à transformer une valeur déjà écrite, et non à ajouter
+    // une liste vide. Aucune version publiée n'a produit ce type, mais un fichier
+    // fabriqué à la main peut le porter — et le mécanisme doit savoir le faire.
+    const objectifs = [
+      { id: 'o1', profilId: 'p1', type: 'comportemental', champCle: 'marche', actif: true, creeLe: '' },
+      { id: 'o2', profilId: 'p1', type: 'fourchette', champCle: 'poids', actif: true, creeLe: '' },
+    ]
+    const c = migrer(carnetV1({ objectifs }))
+    expect(c.objectifs[0]!.type).toBe('regularite')
+    // Les autres types ne bougent pas.
+    expect(c.objectifs[1]!.type).toBe('fourchette')
+    expect(c.objectifs[0]!.champCle).toBe('marche')
+  })
 })
 
 describe('migrer — le mécanisme lui-même (§ 11.4)', () => {

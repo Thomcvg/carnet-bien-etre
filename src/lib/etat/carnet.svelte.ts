@@ -20,7 +20,7 @@ import {
 import { versISO } from '../domain/dates'
 import { calculerImc, lireImc, poidsDeReference, ratioTailleStature } from '../domain/imc'
 import { ageA } from '../domain/dates'
-import { calculerProgression } from '../domain/objectifs'
+import { calculerProgression, suivreObjectifs, type SuiviObjectif } from '../domain/objectifs'
 import { bilanChamp, derniereValeur, valeurLaPlusProche } from '../domain/bilan'
 import { comparerMesures, detecterPerteRapide, serie, variationParJour } from '../domain/tendance'
 import { trierEvenements } from '../domain/evenements'
@@ -59,7 +59,15 @@ class EtatCarnet {
   profils = $state<Profil[]>([])
   champs = $state<DefinitionChamp[]>([])
   mesures = $state<Mesure[]>([])
-  objectif = $state<Objectif | null>(null)
+  /**
+   * Les objectifs **actifs**, dans l'ordre où ils ont été définis.
+   *
+   * Il y en avait un seul, et définir un objectif de sommeil aurait fait perdre
+   * celui de poids — une régression déguisée en fonctionnalité. La règle est
+   * désormais : autant d'objectifs que de champs, **au plus un par champ**, deux
+   * objectifs concurrents sur la même donnée n'ayant pas de sens.
+   */
+  objectifs = $state<Objectif[]>([])
   evenements = $state<Evenement[]>([])
   reflexions = $state<ReflexionMensuelle[]>([])
   traitements = $state<Traitement[]>([])
@@ -72,8 +80,15 @@ class EtatCarnet {
 
   /* ---------------- chargement ---------------- */
 
-  async charger(): Promise<void> {
-    this.chargement = true
+  /**
+   * `silencieux` recharge sans repasser par l'écran « Ouverture du carnet… ».
+   *
+   * Ce n'est pas une coquetterie : `chargement` remplace toute l'interface, donc
+   * démonte l'écran appelant et le message qu'il s'apprêtait à afficher. Après un
+   * import, la restauration réussissait sans que rien ne vienne le dire.
+   */
+  async charger(options: { silencieux?: boolean } = {}): Promise<void> {
+    if (!options.silencieux) this.chargement = true
     const profils = await base.profils.toArray()
     this.profils = profils
 
@@ -82,7 +97,7 @@ class EtatCarnet {
       this.profil = profilParDefaut()
       this.champs = champsParDefaut()
       this.mesures = []
-      this.objectif = null
+      this.objectifs = []
       this.evenements = []
       this.reflexions = []
       this.traitements = []
@@ -138,7 +153,9 @@ class EtatCarnet {
 
     this.champs = [...fusionnes, ...manquants]
     this.mesures = mesures.sort(comparerMesures)
-    this.objectif = objectifs.find((o) => o.actif) ?? null
+    this.objectifs = objectifs
+      .filter((o) => o.actif)
+      .sort((a, b) => a.creeLe.localeCompare(b.creeLe))
     this.evenements = trierEvenements(evenements)
     this.reflexions = reflexions
     this.traitements = traitements
@@ -336,7 +353,11 @@ class EtatCarnet {
     const en = this.suppressionAnnulable
     if (!en) return
 
-    await base.mesures.put(en.mesure)
+    // `en.mesure` vient de `$state` : ses valeurs imbriquées (une tension, une
+    // liste de choix multiples) sont des proxys, qu'IndexedDB refuse de cloner.
+    // Sans instantané, annuler la suppression d'une telle mesure échouait —
+    // silencieusement, la promesse étant rejetée sans que rien ne l'écoute.
+    await base.mesures.put($state.snapshot(en.mesure))
     this.mesures = [...this.mesures, en.mesure].sort(comparerMesures)
     this.suppressionAnnulable = null
     if (this.#minuteurAnnulation) clearTimeout(this.#minuteurAnnulation)
@@ -344,26 +365,39 @@ class EtatCarnet {
 
   /* ---------------- objectif ---------------- */
 
+  /**
+   * Un seul objectif actif **par champ** : définir un objectif de poids ne touche
+   * pas à celui du sommeil. Les précédents sur le même champ sont désactivés,
+   * jamais effacés (§ 9.1) — un objectif abandonné reste une trace du parcours.
+   */
   async definirObjectif(o: Omit<Objectif, 'id' | 'profilId' | 'creeLe'>): Promise<void> {
     const p = this.profil
     if (!p) return
 
-    // Un seul objectif actif à la fois ; les précédents sont désactivés, pas effacés (§ 9.1).
     const anciens = await base.objectifs.where('profilId').equals(p.id).toArray()
     await Promise.all(
-      anciens.filter((a) => a.actif).map((a) => base.objectifs.put({ ...a, actif: false })),
+      anciens
+        .filter((a) => a.actif && a.champCle === o.champCle)
+        .map((a) => base.objectifs.put({ ...a, actif: false })),
     )
 
     const objectif: Objectif = { ...o, id: nouvelId(), profilId: p.id, creeLe: maintenant() }
     await base.objectifs.put(objectif)
-    this.objectif = objectif
+    this.objectifs = [
+      ...this.objectifs.filter((a) => a.champCle !== o.champCle),
+      objectif,
+    ].sort((a, b) => a.creeLe.localeCompare(b.creeLe))
   }
 
-  async retirerObjectif(): Promise<void> {
-    const o = this.objectif
+  async retirerObjectif(champCle: string): Promise<void> {
+    const o = this.objectifs.find((a) => a.champCle === champCle)
     if (!o) return
     await base.objectifs.put({ ...$state.snapshot(o), actif: false })
-    this.objectif = null
+    this.objectifs = this.objectifs.filter((a) => a.champCle !== champCle)
+  }
+
+  objectifDe(champCle: string): Objectif | undefined {
+    return this.objectifs.find((o) => o.champCle === champCle)
   }
 
   /* ---------------- champs ---------------- */
@@ -483,7 +517,7 @@ class EtatCarnet {
       p ? [$state.snapshot(p)] : [],
       $state.snapshot(this.champs),
       $state.snapshot(this.mesures),
-      this.objectif ? [$state.snapshot(this.objectif)] : [],
+      $state.snapshot(this.objectifs),
       $state.snapshot(this.evenements),
       $state.snapshot(this.reflexions),
       $state.snapshot(this.traitements),
@@ -501,8 +535,15 @@ class EtatCarnet {
    * Les identifiants de lignes sont régénérés : deux profils qui restaurent la
    * même sauvegarde partageraient sinon les mêmes clés primaires, et le second
    * import déplacerait les mesures du premier (le défaut même qu'on corrige ici).
+   *
+   * L'instantané d'entrée n'est pas une précaution de style. L'écran des
+   * paramètres retient le carnet lu dans un `$state` le temps de la
+   * confirmation, ce qui le proxifie de part en part ; `structuredClone` — donc
+   * IndexedDB — refuse ces proxys, et la transaction entière avortait sans qu'un
+   * seul message ne l'annonce. Restaurer une sauvegarde ne faisait plus rien.
    */
-  async importer(carnet: Carnet): Promise<void> {
+  async importer(entrant: Carnet): Promise<void> {
+    const carnet = $state.snapshot(entrant) as Carnet
     const importe = carnet.profils[0] ?? profilParDefaut()
     const profilId = this.profil?.id ?? importe.id
     const profil: Profil = { ...importe, id: profilId }
@@ -548,7 +589,9 @@ class EtatCarnet {
       })
 
     await this.#definirProfilActif(profilId)
-    await this.charger()
+    // Silencieux : l'écran des paramètres doit survivre au rechargement pour
+    // pouvoir annoncer que la sauvegarde a bien été restaurée.
+    await this.charger({ silencieux: true })
   }
 
   /**
@@ -587,7 +630,7 @@ class EtatCarnet {
     this.profil = null
     this.champs = []
     this.mesures = []
-    this.objectif = null
+    this.objectifs = []
     this.evenements = []
     this.reflexions = []
     this.traitements = []
@@ -646,8 +689,24 @@ class EtatCarnet {
 
   get bilanPoids() { return bilanChamp(this.mesures, CLE_POIDS) }
 
-  get progression() {
-    const o = this.objectif
+  /**
+   * Tous les objectifs actifs, résolus et prêts à afficher — niveau ou
+   * régularité, sur n'importe quel champ. Un objectif dont le champ a été
+   * désactivé n'y figure pas : il se tait sans être perdu.
+   */
+  get suivisObjectifs(): SuiviObjectif[] {
+    return suivreObjectifs(this.objectifs, this.champs, this.mesures, versISO(new Date()))
+  }
+
+  /**
+   * L'objectif de poids garde deux accès dédiés : il est le seul auquel
+   * s'appliquent l'avertissement d'IMC (§ 12.2), le seuil de rythme
+   * hebdomadaire (F6) et la bande d'objectif sous la courbe d'accueil.
+   */
+  get objectifPoids(): Objectif | undefined { return this.objectifDe(CLE_POIDS) }
+
+  get progressionPoids() {
+    const o = this.objectifPoids
     if (!o) return null
     return calculerProgression(o, this.poidsInitial, this.poidsActuel)
   }

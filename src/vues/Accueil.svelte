@@ -7,19 +7,23 @@
    */
   import Courbe from '../composants/Courbe.svelte'
   import Jauge from '../composants/Jauge.svelte'
+  import RepereRegularite from '../composants/RepereRegularite.svelte'
   import { carnet } from '$lib/etat/carnet.svelte'
   import { formaterDate, joursEntre, versISO } from '$lib/domain/dates'
   import { formaterEvolution, formaterNombre, masseVersAffichage } from '$lib/domain/unites'
   import { formaterImc } from '$lib/domain/imc'
   import { moyenneMobile, sensEvolution, BANDE_INCERTITUDE_KG } from '$lib/domain/tendance'
-  import { champsActifs } from '$lib/domain/champs'
-  import { formaterValeurChamp } from '$lib/domain/valeurs'
+  import {
+    champsActifs, estChampMasse, uniteAffichee, valeurVersAffichage,
+  } from '$lib/domain/champs'
+  import { estObjectivable } from '$lib/domain/objectifs'
+  import { enonceObjectif, formaterValeurChamp } from '$lib/domain/valeurs'
   import { formaterDosage } from '$lib/domain/traitements'
   import type { DefinitionChamp, TypeObjectif } from '$lib/domain/types'
 
   interface Props {
     onnouvelleMesure: () => void
-    ondefinirObjectif: (type?: TypeObjectif) => void
+    ondefinirObjectif: (type?: TypeObjectif, champCle?: string) => void
   }
 
   let { onnouvelleMesure, ondefinirObjectif }: Props = $props()
@@ -51,15 +55,34 @@
   })
 
   const bilan = $derived(carnet.bilanPoids)
-  const progression = $derived(carnet.progression)
   const lecture = $derived(carnet.lectureImc)
   const zone = $derived(carnet.zonePoidsSante)
 
   const tendance = $derived(moyenneMobile(carnet.poids))
 
+  /* ---------------- objectifs (F1 à F4) ---------------- */
+
+  const suivis = $derived(carnet.suivisObjectifs)
+
+  /** Reste-t-il une donnée suivie sans objectif ? Sinon, ne rien proposer. */
+  const resteAObjectiver = $derived(
+    champsActifs(carnet.champs).some((c) => estObjectivable(c) && !carnet.objectifDe(c.cle)),
+  )
+
+  /**
+   * La distance restante ne s'affiche pas toujours :
+   *  - § 12.1 : la part parcourue n'est pas un poids, la distance restante en
+   *    est un — elle disparaît donc en mode sans chiffre ;
+   *  - sur une échelle de 1 à 5, « reste 0,3 » annonce une précision qui n'existe
+   *    pas : on ne note pas un stress au tiers de point.
+   */
+  const masquerRestant = (c: DefinitionChamp) =>
+    (sansChiffre && estChampMasse(c.cle)) || c.type === 'echelle5'
+
+  /** La bande d'objectif sous la courbe ne concerne que la courbe affichée. */
   const zoneObjectif = $derived.by(() => {
-    const o = carnet.objectif
-    if (!o || o.valeurMin === undefined) return null
+    const o = carnet.objectifPoids
+    if (!o || o.type === 'regularite' || o.valeurMin === undefined) return null
     return { min: Math.min(o.valeurMin, o.valeurMax ?? o.valeurMin),
              max: Math.max(o.valeurMin, o.valeurMax ?? o.valeurMin) }
   })
@@ -149,42 +172,77 @@
               <dd class="nombre">{m(bilan.minimum.valeur)} {unite}</dd>
             </div>
           {/if}
-          {#if carnet.objectif && progression?.cible != null}
-            <div>
-              <dt>Objectif</dt>
-              <dd class="nombre">
-                {#if carnet.objectif.type === 'fourchette' || carnet.objectif.type === 'maintien'}
-                  {m(carnet.objectif.valeurMin)}–{m(carnet.objectif.valeurMax)} {unite}
-                {:else}
-                  {m(carnet.objectif.valeurMin)} {unite}
-                {/if}
-              </dd>
-            </div>
-          {/if}
+          <!-- Pas d'entrée « Objectif » ici : la carte du dessous l'énonce déjà,
+               et le répéter à deux lignes d'intervalle n'apprend rien. Ces trois
+               chiffres-ci sont des faits d'historique, pas une visée. -->
         </dl>
       {/if}
     </section>
 
-    <!-- Progression et courbe : n'ont de sens que si le poids est suivi. -->
-    {#if suitPoids}
-    <section class="carte" aria-labelledby="titre-progression">
-      <h2 id="titre-progression">Progression</h2>
-      {#if carnet.objectif && progression}
-        <Jauge
-          pourcent={progression.pourcent}
-          restant={progression.restant === null ? null : masseVersAffichage(progression.restant, unite)}
-          {unite}
-          atteint={progression.atteint}
-          maintien={carnet.objectif.type === 'maintien'}
-          dansLaFourchette={progression.dansLaFourchette}
-        />
-        {#if progression.atteint && carnet.objectif.type !== 'maintien'}
-          <!-- § 9.4 : atteindre la cible ne clôt pas le parcours. -->
-          <p class="apres-objectif">
-            Vous avez atteint votre objectif. Souhaitez-vous passer en maintien, avec une
-            fourchette autour de votre poids actuel ?
-            <button type="button" class="bouton bouton--discret lien" onclick={() => ondefinirObjectif('maintien')}>
-              Définir un maintien
+    <!--
+      Objectifs (F1 à F4). Ils ne dépendent plus du poids : on peut viser un tour
+      de taille, un niveau de stress, ou une régularité de sommeil. Un objectif
+      par donnée suivie, chacun avec sa propre forme.
+    -->
+    <section class="carte" aria-labelledby="titre-objectifs">
+      <h2 id="titre-objectifs">Vos objectifs</h2>
+
+      {#if suivis.length > 0}
+        <ul class="objectifs">
+          {#each suivis as s (s.objectif.id)}
+            <li>
+              <div class="entete-objectif">
+                <h3>{s.champ.libelle}</h3>
+                <button
+                  type="button"
+                  class="bouton bouton--discret lien"
+                  onclick={() => ondefinirObjectif(undefined, s.champ.cle)}
+                >
+                  Modifier
+                </button>
+              </div>
+
+              {#if !(sansChiffre && estChampMasse(s.champ.cle))}
+                <p class="enonce">{enonceObjectif(s.objectif, s.champ, unite)}</p>
+              {/if}
+
+              {#if s.regularite}
+                <RepereRegularite regularite={s.regularite} />
+              {:else if s.progression}
+                <Jauge
+                  pourcent={s.progression.pourcent}
+                  restant={s.progression.restant === null
+                    ? null
+                    : valeurVersAffichage(s.champ, s.progression.restant, unite)}
+                  unite={uniteAffichee(s.champ, unite)}
+                  atteint={s.progression.atteint}
+                  maintien={s.objectif.type === 'maintien'}
+                  dansLaFourchette={s.progression.dansLaFourchette}
+                  masquerRestant={masquerRestant(s.champ)}
+                />
+                {#if s.progression.atteint && s.objectif.type !== 'maintien'}
+                  <!-- § 9.4 : atteindre la cible ne clôt pas le parcours. -->
+                  <p class="apres-objectif">
+                    Vous avez atteint cet objectif. Souhaitez-vous passer en maintien, avec
+                    une fourchette autour de votre valeur actuelle ?
+                    <button
+                      type="button"
+                      class="bouton bouton--discret lien"
+                      onclick={() => ondefinirObjectif('maintien', s.champ.cle)}
+                    >
+                      Définir un maintien
+                    </button>
+                  </p>
+                {/if}
+              {/if}
+            </li>
+          {/each}
+        </ul>
+
+        {#if resteAObjectiver}
+          <p class="sans-objectif">
+            <button type="button" class="bouton bouton--discret lien" onclick={() => ondefinirObjectif()}>
+              Définir un objectif sur une autre donnée
             </button>
           </p>
         {/if}
@@ -198,7 +256,8 @@
       {/if}
     </section>
 
-    <!-- Courbe -->
+    <!-- Courbe : n'a de sens que si le poids est suivi. -->
+    {#if suitPoids}
     <section class="carte" aria-labelledby="titre-courbe">
       <h2 id="titre-courbe">Évolution du poids</h2>
       <Courbe
@@ -319,6 +378,28 @@
 
   .accueil-vide { display: flex; flex-direction: column; gap: 0.8rem; align-items: flex-start; }
   .accueil-vide p { color: var(--encre-2); }
+
+  .objectifs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  /* Un séparateur entre objectifs : sans lui, deux jauges se lisent comme une seule. */
+  .objectifs li + li { border-top: 1px solid var(--trait); padding-top: 1.1rem; }
+
+  .entete-objectif {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .entete-objectif h3 { font-size: 1rem; margin: 0; }
+
+  .enonce { color: var(--encre-2); font-size: 0.9rem; margin: 0.15rem 0 0.55rem; }
 
   .sans-objectif, .apres-objectif { color: var(--encre-2); font-size: 0.95rem; margin-top: 0.5rem; }
   .lien {

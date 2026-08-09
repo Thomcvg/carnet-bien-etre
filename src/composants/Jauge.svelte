@@ -1,10 +1,16 @@
 <script lang="ts">
   /**
-   * Jauge de progression (§ 5.2 v1.0, § 7.4).
+   * Jauge de progression vers un objectif de niveau (§ 5.2 v1.0, § 7.4).
    *
    * La valeur est bornée à [0, 100] pour l'affichage, mais la légende dit toujours
    * la vérité : on n'édulcore pas un recul, on le formule sans reproche (§ 12.1).
+   *
+   * `masquerRestant` sert le mode sans chiffre (§ 12.1) : la part parcourue n'est
+   * pas un poids et peut rester affichée, la distance restante en est un et doit
+   * disparaître. Sans ce réglage, l'écran annonçait « Reste 3,2 kg » à quelqu'un
+   * qui avait précisément demandé à ne plus voir de kilos.
    */
+  import Barre from './Barre.svelte'
   import { formaterNombre } from '$lib/domain/unites'
 
   interface Props {
@@ -15,6 +21,7 @@
     /** Objectif de maintien : on affiche une position, pas une progression (F2). */
     maintien?: boolean
     dansLaFourchette?: boolean | null
+    masquerRestant?: boolean
   }
 
   let {
@@ -24,9 +31,10 @@
     atteint = false,
     maintien = false,
     dansLaFourchette = null,
+    masquerRestant = false,
   }: Props = $props()
 
-  const largeur = $derived(pourcent === null ? 0 : Math.max(0, Math.min(100, pourcent)))
+  const restantAffiche = $derived(masquerRestant ? null : restant)
 </script>
 
 {#if maintien}
@@ -35,8 +43,8 @@
     <span>
       {#if dansLaFourchette}
         Vous êtes dans votre fourchette.
-      {:else if restant !== null}
-        À {formaterNombre(restant)} {unite} de votre fourchette.
+      {:else if restantAffiche !== null}
+        À {formaterNombre(restantAffiche)} {unite} de votre fourchette.
       {:else}
         Fourchette de maintien définie.
       {/if}
@@ -48,23 +56,14 @@
   </p>
 {:else}
   <div class="jauge">
-    <div
-      class="piste"
-      role="progressbar"
-      aria-valuenow={Math.round(largeur)}
-      aria-valuemin="0"
-      aria-valuemax="100"
-      aria-label="Progression vers l'objectif"
-    >
-      <div class="remplissage" style="width: {largeur}%"></div>
-    </div>
+    <Barre {pourcent} intitule="Progression vers l'objectif" />
 
     <div class="legende">
-      <span class="pourcent nombre">{formaterNombre(largeur, 0)} %</span>
+      <span class="pourcent nombre">{formaterNombre(Math.max(0, Math.min(100, pourcent)), 0)} %</span>
       {#if atteint}
         <span class="mention">Objectif atteint</span>
-      {:else if restant !== null}
-        <span class="mention nombre">Reste {formaterNombre(restant)} {unite}</span>
+      {:else if restantAffiche !== null}
+        <span class="mention nombre">Reste {formaterNombre(restantAffiche)} {unite}</span>
       {/if}
     </div>
   </div>
@@ -72,20 +71,6 @@
 
 <style>
   .jauge { display: flex; flex-direction: column; gap: 0.45rem; }
-
-  .piste {
-    height: 0.85rem;
-    background: var(--sauge-voile);
-    border: 1px solid var(--sauge-trait);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  .remplissage {
-    height: 100%;
-    background: var(--sauge-texte);
-    border-radius: 999px;
-    transition: width 0.3s ease;
-  }
 
   .legende {
     display: flex;

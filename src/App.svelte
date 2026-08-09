@@ -42,9 +42,11 @@
   let mesureEnEdition = $state<string | null>(null)
   let objectifOuvert = $state(false)
   let objectifTypeInitial = $state<TypeObjectif | undefined>(undefined)
+  let objectifChampInitial = $state<string | undefined>(undefined)
 
-  function ouvrirObjectif(type?: TypeObjectif) {
+  function ouvrirObjectif(type?: TypeObjectif, champCle?: string) {
     objectifTypeInitial = type
+    objectifChampInitial = champCle
     objectifOuvert = true
   }
 
@@ -210,6 +212,7 @@
   <ObjectifModale
     ouvert={objectifOuvert}
     typeInitial={objectifTypeInitial}
+    champInitial={objectifChampInitial}
     onfermer={() => (objectifOuvert = false)}
   />
 {/if}

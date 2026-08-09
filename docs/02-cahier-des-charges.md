@@ -120,8 +120,9 @@ Traitement                                ← B4
   id, nom, dosage?, debut, fin?, rappelActif, heuresRappel[]
 
 Objectif
-  id, type: cible|fourchette|maintien|comportemental
+  id, type: cible|fourchette|maintien|regularite
   champCle, valeurMin?, valeurMax?, dateCible?, actif, creeLe
+  regularite?: { occurrences, periode: semaine|mois }   ← type `regularite` uniquement
 
 Jalon
   id, cle, libelle, atteintLe
@@ -290,7 +291,11 @@ Affichés uniquement si au moins un champ d'activité est actif. Ce sont des rep
 - **Fourchette (F1)** — mode recommandé et proposé par défaut : « entre 61 et 64 kg ». On n'échoue plus à 63,2 kg.
 - **Maintien (F2)** : rester dans une fourchette, sans direction.
 - **Prise de poids (F3)** : toute la logique d'affichage s'inverse, y compris les jalons et le vocabulaire.
-- **Comportemental (F4)** : « marcher trois fois par semaine », « dormir sept heures ». Adossé à un champ suivi, sans référence au poids.
+- **Régularité (F4)** : « marcher trois fois par semaine », « dormir sept heures cinq nuits sur sept ». Une condition sur un champ suivi (au moins / au plus / entre, ou « oui » pour un booléen), un nombre de fois, une période glissante de 7 ou 30 jours. **Le décompte porte sur les jours documentés, jamais sur la longueur de la période** : un jour sans saisie n'est pas un jour manqué (règle 2 de la charte). Ni série à préserver, ni décompte de ce qui manque.
+
+Un objectif porte sur **n'importe quelle donnée suivie**, pas seulement le poids : `champCle` le désigne. On peut en définir **un par donnée** — plusieurs sont actifs à la fois, mais jamais deux sur le même champ, ce qui n'aurait pas de sens. Un objectif dont le champ est désactivé se tait sans être supprimé.
+
+Deux garde-fous restent propres au poids parce qu'ils relèvent de sa physiologie : l'avertissement d'IMC (§ 12.2) et le seuil de rythme hebdomadaire (§ 9.2).
 
 L'objectif est modifiable à tout moment et n'affecte jamais l'historique.
 
