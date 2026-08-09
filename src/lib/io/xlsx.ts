@@ -16,6 +16,7 @@ import * as XLSX from 'xlsx'
 import type { DefinitionChamp, Mesure } from '../domain/types'
 import { formaterDate } from '../domain/dates'
 import { comparerMesures } from '../domain/tendance'
+import { formaterMeteo } from '../domain/meteo'
 
 type CelluleTypee = string | number | undefined
 
@@ -49,6 +50,7 @@ export function versXlsx(
     'Date',
     'Heure',
     ...colonnes.map((c) => (c.unite ? `${c.libelle} (${c.unite})` : c.libelle)),
+    'Météo',
     'Étiquettes',
     'Notes',
   ]
@@ -59,6 +61,7 @@ export function versXlsx(
       formaterDate(m.date, options.formatDate),
       m.moment,
       ...colonnes.map((c) => valeurCellule(m.valeurs[c.cle])),
+      m.meteo ? formaterMeteo(m.meteo) : undefined,
       m.etiquettes && m.etiquettes.length > 0 ? m.etiquettes.join(', ') : undefined,
       m.notes,
     ])

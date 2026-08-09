@@ -53,8 +53,15 @@ est bien écrite, bien testée, et demandée par des utilisateurs.
 6. **L'accessibilité n'est pas une phase finale.** Chaque lot est livré accessible
    (§ 13) : contraste AA vérifié, navigation clavier complète, aucune information
    portée par la seule couleur.
-7. **Aucune connexion réseau sans action explicite**, à la seule exception encadrée de
-   la météo (§ 11.8, règle 18).
+7. **Aucune connexion réseau sans action explicite.** Une seule fonctionnalité sort
+   de l'appareil : la météo (§ 11.8, règle 18). Elle est désactivée par défaut, et
+   son activation énonce ce qui sera transmis **avant** de le transmettre — les
+   coordonnées d'une commune choisie, arrondies à environ un kilomètre, et rien
+   d'autre. Aucun identifiant, aucune donnée du carnet, aucun historique de
+   requête. Tout le reste, y compris les objectifs, les exports et les
+   graphiques, fonctionne sans réseau. Les deux seuls appels du projet tiennent
+   dans `src/lib/io/meteo.ts`, et ce fichier ne fait que cela : cette règle n'a
+   de valeur que si elle reste vérifiable d'un coup d'œil.
 
 ## Pour proposer une fonctionnalité
 

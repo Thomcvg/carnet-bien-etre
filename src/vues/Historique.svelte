@@ -18,6 +18,7 @@
   import { comparerMesures } from '$lib/domain/tendance'
   import { libelleType } from '$lib/domain/evenements'
   import { formaterValeurChamp, libelleContextePesee } from '$lib/domain/valeurs'
+  import { formaterMeteo } from '$lib/domain/meteo'
   import { lireNombre } from '$lib/domain/types'
   import type { DefinitionChamp, Mesure } from '$lib/domain/types'
 
@@ -144,6 +145,9 @@
                 {#if mesure.moment}<span class="moment">à {mesure.moment}</span>{/if}
                 {#if mesure.contextePesee}
                   <span class="moment">— {libelleContextePesee(mesure.contextePesee)}</span>
+                {/if}
+                {#if mesure.meteo}
+                  <span class="moment">— {formaterMeteo(mesure.meteo)}</span>
                 {/if}
               </p>
               <ul class="valeurs">

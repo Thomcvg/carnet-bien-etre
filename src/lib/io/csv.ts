@@ -11,6 +11,7 @@
 import type { DefinitionChamp, Mesure } from '../domain/types'
 import { formaterDate } from '../domain/dates'
 import { comparerMesures } from '../domain/tendance'
+import { formaterMeteo } from '../domain/meteo'
 
 const SEPARATEUR = ';'
 
@@ -54,6 +55,7 @@ export function versCsv(
     'Date',
     'Heure',
     ...colonnes.map((c) => (c.unite ? `${c.libelle} (${c.unite})` : c.libelle)),
+    'Météo',
     'Étiquettes',
     'Notes',
   ]
@@ -64,6 +66,7 @@ export function versCsv(
       echapper(formaterDate(m.date, options.formatDate)),
       cellule(m.moment),
       ...colonnes.map((c) => cellule(m.valeurs[c.cle])),
+      cellule(m.meteo ? formaterMeteo(m.meteo) : undefined),
       cellule(m.etiquettes && m.etiquettes.length > 0 ? m.etiquettes.join(', ') : undefined),
       cellule(m.notes),
     ].join(SEPARATEUR))

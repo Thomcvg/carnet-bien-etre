@@ -17,6 +17,7 @@
   import { CLE_TAILLE, champsDeCategorie, estDernierChampActif } from '$lib/domain/champs'
   import { versISO } from '$lib/domain/dates'
   import { depuisJson, lireFichier, telechargerCsv, telechargerXlsx, telechargerJson } from '$lib/io/sauvegarde'
+  import { chercherCommune } from '$lib/io/meteo'
   import { VERSION_SCHEMA } from '$lib/domain/migrations'
   import { traitementEnCours } from '$lib/domain/traitements'
   import { PALETTES } from '$lib/domain/types'
@@ -41,6 +42,44 @@
   let traitementModaleOuverte = $state(false)
   let traitementEnEdition = $state<string | null>(null)
   let nouveauProfilOuvert = $state(false)
+
+  /* ---------------- météo (§ 11.8) ---------------- */
+
+  let rechercheCommune = $state('')
+  let rechercheEnCours = $state(false)
+  let communesTrouvees = $state<Awaited<ReturnType<typeof chercherCommune>>>([])
+  let messageMeteo = $state<{ ton: 'ok' | 'probleme'; texte: string } | null>(null)
+
+  async function lancerRecherche() {
+    const nom = rechercheCommune.trim()
+    if (nom.length < 2 || rechercheEnCours) return
+    rechercheEnCours = true
+    messageMeteo = null
+    communesTrouvees = []
+    try {
+      communesTrouvees = await chercherCommune(nom)
+      if (communesTrouvees.length === 0) {
+        messageMeteo = { ton: 'probleme', texte: `Aucune commune trouvée pour « ${nom} ».` }
+      }
+    } catch (e) {
+      // Une panne du service ne doit rien casser : on le dit, et on en reste là.
+      messageMeteo = {
+        ton: 'probleme',
+        texte: e instanceof Error ? `La recherche n'a pas abouti : ${e.message}.` : 'La recherche n\'a pas abouti.',
+      }
+    } finally {
+      rechercheEnCours = false
+    }
+  }
+
+  async function choisirCommune(c: { nom: string; latitude: number; longitude: number }) {
+    await carnet.majProfil({
+      meteoLieu: { nom: c.nom, latitude: c.latitude, longitude: c.longitude },
+    })
+    communesTrouvees = []
+    rechercheCommune = ''
+    messageMeteo = null
+  }
 
   /**
    * Composée ici plutôt que dans le gabarit : Svelte élague les espaces en tête
@@ -328,6 +367,87 @@
           <option value="90">90 jours</option>
         </select>
       </div>
+    {/if}
+  </section>
+
+  <!--
+    § 11.8 : la seule fonctionnalité qui sorte de l'appareil. Le texte énonce ce
+    qui est transmis **avant** l'activation, et non après — c'est la condition
+    posée par le cahier des charges, et l'inverse serait un consentement obtenu
+    sans information.
+  -->
+  <section class="carte pile gap-m">
+    <h2>Météo</h2>
+    <p class="aide">
+      Désactivée par défaut. C'est la seule fonctionnalité du carnet qui interroge
+      un service extérieur : tout le reste fonctionne sans réseau, et rien d'autre
+      ne quitte jamais cet appareil.
+    </p>
+
+    {#if !profil.meteoLieu}
+      <div class="encart-reseau">
+        <p>
+          Si vous l'activez, le carnet demandera la météo du jour à
+          <strong>Open-Meteo</strong>, un service de données ouvertes sans compte
+          ni publicité.
+        </p>
+        <p>
+          <strong>Ce qui est transmis :</strong> les coordonnées de la commune que
+          vous choisissez, arrondies à environ un kilomètre. Rien d'autre — ni votre
+          nom, ni vos mesures, ni aucun identifiant. Aucun historique de ces demandes
+          n'est conservé.
+        </p>
+        <p class="aide">
+          Vous pouvez aussi noter la météo à la main dans chaque mesure, sans rien
+          activer ici.
+        </p>
+      </div>
+
+      <div class="champ">
+        <label for="p-commune">Chercher une commune</label>
+        <div class="recherche">
+          <input id="p-commune" type="text" bind:value={rechercheCommune}
+            placeholder="Lons-le-Saunier"
+            onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); lancerRecherche() } }} />
+          <button type="button" class="bouton" onclick={lancerRecherche}
+            disabled={rechercheEnCours || rechercheCommune.trim().length < 2}>
+            {rechercheEnCours ? 'Recherche…' : 'Chercher'}
+          </button>
+        </div>
+        <p class="aide">La recherche envoie le nom tapé à Open-Meteo, et rien de plus.</p>
+      </div>
+
+      {#if messageMeteo}
+        <p class="message" class:message--probleme={messageMeteo.ton === 'probleme'} role="status">
+          {messageMeteo.texte}
+        </p>
+      {/if}
+
+      {#if communesTrouvees.length > 0}
+        <ul class="communes">
+          {#each communesTrouvees as c (`${c.nom}-${c.latitude}-${c.longitude}`)}
+            <li>
+              <button type="button" class="bouton" onclick={() => choisirCommune(c)}>
+                {c.nom}{c.region ? `, ${c.region}` : ''}{c.pays ? ` (${c.pays})` : ''}
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    {:else}
+      <p>
+        Météo activée pour <strong>{profil.meteoLieu.nom}</strong>
+        <span class="aide">
+          ({formaterNombre(profil.meteoLieu.latitude, 2)}, {formaterNombre(profil.meteoLieu.longitude, 2)})
+        </span>
+      </p>
+      <p class="aide">
+        Le carnet relève la météo à l'ouverture d'une nouvelle mesure. Elle reste
+        modifiable à la main, et une panne de réseau n'empêche jamais d'enregistrer.
+      </p>
+      <button type="button" class="bouton" onclick={() => carnet.majProfil({ meteoLieu: undefined })}>
+        Désactiver la météo
+      </button>
     {/if}
   </section>
 
@@ -742,6 +862,25 @@
     font-size: 0.92rem;
   }
   .message--probleme { background: var(--attention-fond); border-color: var(--attention); color: var(--attention); }
+
+  /* § 11.8 : ce qui sort de l'appareil se lit dans un encart qui se distingue
+     du reste des réglages — cette information n'est pas une aide de plus. */
+  .encart-reseau {
+    background: var(--second-voile);
+    border: 1px solid var(--second-trait);
+    border-radius: var(--rayon-s);
+    padding: 0.9rem 1rem;
+    font-size: 0.92rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .recherche { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .recherche input { flex: 1 1 12rem; }
+
+  .communes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .communes .bouton { width: 100%; justify-content: flex-start; text-align: left; }
 
   .sauvegarde-auto {
     margin-top: 0.6rem;

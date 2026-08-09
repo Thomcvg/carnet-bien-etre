@@ -7,6 +7,8 @@
  *  - Aucun type ne décrit une valeur calculée : les indicateurs sont dérivés à la volée (§ 3.4).
  */
 
+import type { LieuMeteo, MeteoMesure } from './meteo'
+
 /** Date civile ISO, `AAAA-MM-JJ`. Le format d'affichage en est indépendant (§ 6.2 v1.0). */
 export type DateISO = string
 
@@ -86,6 +88,8 @@ export interface Mesure {
   /** `HH:MM`, seulement si plusieurs pesées le même jour (A29). */
   moment?: string
   contextePesee?: ContextePesee
+  /** Champ de contexte (C20, § 20), relevé automatiquement ou noté à la main. */
+  meteo?: MeteoMesure
   /** Creux : seules les clés réellement saisies existent. */
   valeurs: Record<string, ValeurChamp>
   notes?: string
@@ -234,6 +238,12 @@ export interface Profil {
    * pas, et retombe sur la sauge du § 14 — aucune migration nécessaire.
    */
   palette?: PaletteCouleurs
+  /**
+   * Météo (C20, § 11.8). Absent tant que la personne ne l'a pas activée — et
+   * c'est bien son absence qui fait que rien ne sort de l'appareil par défaut.
+   * Contient la commune choisie et ses coordonnées déjà arrondies.
+   */
+  meteoLieu?: LieuMeteo
   taillePolice: 100 | 125 | 150 | 200
   modeSansChiffre: boolean
   /**

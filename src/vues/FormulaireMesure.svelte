@@ -32,6 +32,8 @@
     reperesDeSaisie, trouverDoublon, construireValeurs, reprendreValeurs,
   } from '$lib/domain/saisie'
   import { versISO, ajouterMois, formaterDate, estDateISOValide } from '$lib/domain/dates'
+  import { METEOS_MANUELLES, type MeteoMesure } from '$lib/domain/meteo'
+  import { relever } from '$lib/io/meteo'
   import type { ContextePesee, DefinitionChamp, ValeurChamp } from '$lib/domain/types'
 
   interface Props {
@@ -57,6 +59,38 @@
   let noteDepliee = $state(false)
   let enchainer = $state(false)
   let doublonConfirme = $state(false)
+
+  /* ---------------- météo (C20, § 11.8) ---------------- */
+
+  let meteoLibelle = $state('')
+  let meteoTemperature = $state<number | undefined>(undefined)
+  let meteoAutomatique = $state(false)
+  let meteoEnCours = $state(false)
+  /** Une seule tentative par ouverture : rouvrir n'est pas redemander. */
+  let meteoTentee = $state(false)
+
+  const lieuMeteo = $derived(carnet.profil?.meteoLieu)
+
+  /**
+   * Le relevé n'échoue jamais bruyamment. Une commune injoignable, un avion en
+   * mode avion, un service en panne : le champ reste vide et saisissable, et la
+   * mesure s'enregistre comme si de rien n'était (§ 11.8, règle 4).
+   */
+  async function releverMeteo() {
+    const lieu = lieuMeteo
+    if (!lieu || meteoEnCours) return
+    meteoEnCours = true
+    try {
+      const m = await relever(lieu)
+      meteoLibelle = m.libelle
+      meteoTemperature = m.temperature
+      meteoAutomatique = true
+    } catch {
+      /* silence voulu : la météo n'a jamais à interrompre une saisie */
+    } finally {
+      meteoEnCours = false
+    }
+  }
 
   const unite = $derived(carnet.profil?.uniteMasse ?? 'kg')
 
@@ -130,6 +164,9 @@
     valeursTypees = {}
     etiquettesTexte = ''
     notes = ''
+    meteoLibelle = ''
+    meteoTemperature = undefined
+    meteoAutomatique = false
     mensurationsDepliees = false
     bienEtreDeplie = false
     activiteDepliee = false
@@ -168,11 +205,27 @@
         (c) => reprisesTexte[c.cle] !== undefined || reprisesTypees[c.cle] !== undefined
           || reprisesTexte['tension_sys'] !== undefined,
       )
-      noteDepliee = Boolean(notes) || Boolean(existante.etiquettes?.length)
+      meteoLibelle = existante.meteo?.libelle ?? ''
+      meteoTemperature = existante.meteo?.temperature
+      meteoAutomatique = existante.meteo?.automatique ?? false
+      noteDepliee = Boolean(notes) || Boolean(existante.etiquettes?.length) || Boolean(existante.meteo)
     } else {
       reinitialiser()
     }
     doublonConfirme = false
+    meteoTentee = false
+  })
+
+  /**
+   * Relevé à l'ouverture d'une **nouvelle** mesure, une seule fois, et seulement
+   * si la météo a été activée. On ne relève jamais en modification : rappeler le
+   * temps qu'il fait aujourd'hui pour une mesure de l'an dernier serait faux.
+   */
+  $effect(() => {
+    if (!ouvert || mesureId || !lieuMeteo) return
+    if (meteoTentee || meteoLibelle !== '') return
+    meteoTentee = true
+    releverMeteo()
   })
 
   function majSaisie(cle: string, texte: string) {
@@ -184,6 +237,18 @@
     if (v === undefined) delete suivantes[cle]
     else suivantes[cle] = v
     valeursTypees = suivantes
+  }
+
+  /**
+   * Une météo modifiée à la main cesse d'être un relevé, même si elle en venait :
+   * `automatique` dit d'où sort la valeur affichée, pas d'où sortait la première.
+   */
+  function meteoEnregistrable(): MeteoMesure | undefined {
+    const libelle = meteoLibelle.trim()
+    if (!libelle) return undefined
+    return meteoAutomatique
+      ? { libelle, temperature: meteoTemperature, automatique: true }
+      : { libelle, automatique: false }
   }
 
   function etiquettesSaisies(): string[] {
@@ -214,6 +279,7 @@
       etiquettes: etiquettes.length > 0 ? etiquettes : undefined,
       moment: moment || undefined,
       contextePesee: contextePesee || undefined,
+      meteo: meteoEnregistrable(),
       id: mesureId ?? undefined,
     })
 
@@ -463,6 +529,32 @@
             <input id="etiquettes-mesure" type="text" bind:value={etiquettesTexte}
               placeholder="vacances, stress boulot…" />
             <p class="aide">Séparez plusieurs étiquettes par une virgule.</p>
+          </div>
+
+          <!--
+            C20 : champ de contexte, toujours saisissable à la main. Le relevé
+            automatique n'apparaît que si la météo a été activée dans les
+            paramètres, et son échec ne se voit même pas — il ne doit jamais
+            gêner l'enregistrement d'une mesure (§ 11.8).
+          -->
+          <div class="champ">
+            <label for="meteo-mesure">Météo <span class="facultatif">facultatif</span></label>
+            <div class="ligne-meteo">
+              <input id="meteo-mesure" type="text" list="meteos-connues"
+                bind:value={meteoLibelle} placeholder="Couvert, pluie…"
+                oninput={() => { meteoAutomatique = false; meteoTemperature = undefined }} />
+              {#if lieuMeteo}
+                <button type="button" class="bouton" onclick={releverMeteo} disabled={meteoEnCours}>
+                  {meteoEnCours ? 'Relevé…' : 'Relever'}
+                </button>
+              {/if}
+            </div>
+            <datalist id="meteos-connues">
+              {#each METEOS_MANUELLES as m (m)}<option value={m}></option>{/each}
+            </datalist>
+            {#if meteoTemperature !== undefined}
+              <p class="aide">Relevé pour {lieuMeteo?.nom} : {Math.round(meteoTemperature)} °C.</p>
+            {/if}
           </div>
         </div>
       {/if}

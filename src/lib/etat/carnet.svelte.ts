@@ -268,6 +268,7 @@ class EtatCarnet {
       etiquettes?: string[]
       moment?: string
       contextePesee?: Mesure['contextePesee']
+      meteo?: Mesure['meteo']
       id?: string
     } = {},
   ): Promise<Mesure> {
@@ -285,6 +286,7 @@ class EtatCarnet {
           etiquettes: options.etiquettes,
           moment: options.moment,
           contextePesee: options.contextePesee,
+          meteo: options.meteo,
           modifieLe: maintenant(),
         }
       : {
@@ -296,6 +298,7 @@ class EtatCarnet {
           etiquettes: options.etiquettes,
           moment: options.moment,
           contextePesee: options.contextePesee,
+          meteo: options.meteo,
           creeLe: maintenant(),
           modifieLe: maintenant(),
         }
