@@ -41,7 +41,7 @@ export default defineConfig({
         id: '/',
         name: 'Carnet Bien-être',
         short_name: 'Bien-être',
-        description: "Carnet personnel de suivi du poids, des mensurations et du bien-être. Vos données restent sur votre appareil.",
+        description: "Carnet personnel de suivi du poids, des mensurations et du bien-être. Vos données restent sur votre appareil et n'en partent que si vous le demandez.",
         lang: 'fr',
         start_url: '/',
         scope: '/',

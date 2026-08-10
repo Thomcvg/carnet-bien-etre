@@ -61,7 +61,8 @@
     <h1>Carnet Bien-être</h1>
     <p class="intro">
       Un carnet personnel pour suivre votre évolution, à votre rythme.
-      Vos données restent sur cet appareil : aucun compte, aucun envoi.
+      Vos données restent sur cet appareil : aucun compte, et rien n'en part
+      sans que vous le demandiez.
     </p>
   </header>
 

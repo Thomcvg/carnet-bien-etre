@@ -27,7 +27,8 @@
     {
       titre: 'Vos données restent sur cet appareil',
       paragraphes: [
-        'Il n’y a ni compte, ni mot de passe, ni serveur. Ce que vous notez est enregistré ici, et n’est envoyé nulle part.',
+        'Il n’y a ni compte à créer, ni inscription. Ce que vous notez est enregistré ici, et n’en part pas tout seul.',
+        'Rien ne sort de ce téléphone sans que vous le demandiez : exporter une sauvegarde, la déposer sur votre Nextcloud ou relever la météo se font par un geste, et se laissent de côté sans rien perdre.',
         'La contrepartie est qu’un téléphone perdu emporte le carnet avec lui. Les paramètres permettent d’exporter une sauvegarde quand vous le souhaitez — c’est le seul geste à ne pas oublier.',
       ],
     },

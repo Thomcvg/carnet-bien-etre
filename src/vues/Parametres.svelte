@@ -427,9 +427,9 @@
   <section class="carte pile gap-m">
     <h2>Météo</h2>
     <p class="aide">
-      Désactivée par défaut. C'est la seule fonctionnalité du carnet qui interroge
-      un service extérieur : tout le reste fonctionne sans réseau, et rien d'autre
-      ne quitte jamais cet appareil.
+      Désactivée par défaut. C'est la seule fonctionnalité qui interroge un
+      service <em>extérieur</em> — la synchronisation ci-dessous, elle, ne parle
+      qu'au serveur que vous lui indiquez. Tout le reste fonctionne sans réseau.
     </p>
 
     {#if !profil.meteoLieu}
@@ -582,7 +582,9 @@
   <section class="carte pile gap-m">
     <h2>Vos données</h2>
     <p class="aide">
-      Tout est enregistré sur cet appareil. Rien n'est envoyé nulle part.
+      Tout est enregistré sur cet appareil, et rien n'en part sans que vous le
+      demandiez — exporter, synchroniser ou relever la météo sont les seuls gestes
+      qui sortent d'ici, et chacun se déclenche par vous.
       Le fichier JSON est la sauvegarde complète : il se réimporte à l'identique.
     </p>
 

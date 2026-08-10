@@ -9,9 +9,11 @@ toute personne qui veut prendre du recul sur son évolution plutôt que la contr
 ## Principes
 
 - **Gratuit et open source**, sous licence [AGPL-3.0-or-later](LICENSE).
-- **Tout reste sur votre appareil.** Aucun compte, aucun serveur, aucun traceur.
-  La seule exception possible est la météo (facultative, désactivée par défaut,
-  voir § 11.8 du cahier des charges).
+- **Tout reste sur votre appareil.** Aucun compte, aucun traceur, aucune mesure
+  d'audience. Deux fonctionnalités seulement peuvent sortir de l'appareil, toutes
+  deux facultatives, désactivées par défaut et déclenchées par un geste :
+  la **météo** (§ 11.8) et la **synchronisation vers votre propre Nextcloud**
+  (§ 11.7). Voir la [charte](CHARTE.md), règle 7.
 - **Rien n'est obligatoire** au-delà d'une date. Toute donnée est facultative et
   désactivée par défaut — **le poids compris** : un carnet qui ne suit que le
   sommeil ou le niveau de stress est un usage à part entière.
