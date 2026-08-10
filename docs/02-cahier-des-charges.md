@@ -467,7 +467,7 @@ Contrainte ajoutée : les couleurs de la palette doivent atteindre les seuils de
 
 **Trois fonctions ne sont pas disponibles en PWA** et doivent être présentées comme telles, sans écran vide ni bouton inopérant :
 
-- **E7, import des pas** — les interfaces santé du système sont inaccessibles au web. Repli : saisie manuelle.
+- **E7, import des pas** — les interfaces santé du système sont inaccessibles au web. Repli : saisie manuelle. Implémenté via **Health Connect** et non Google Fit, qui exigerait les services Google écartés au § 15.2. Health Connect fait partie du système à partir d'Android 14 ; en deçà il doit être installé séparément, ce que l'application constate au lieu de le supposer. La bibliothèque `androidx.health.connect` impose Android 8.0 au minimum : le plancher du projet passe de l'API 24 à l'API 26.
 - **K12, notifications programmées** — aucune PWA ne sait déclencher une notification locale à date fixe. Repli : rappel affiché à l'ouverture de l'application, ce qui suffit pour un carnet mensuel.
 - **L8, WebDAV** — voir § 11.7.
 

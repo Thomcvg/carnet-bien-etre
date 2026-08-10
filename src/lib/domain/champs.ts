@@ -44,6 +44,8 @@ export const CLE_TOUR_TAILLE = 'tour_taille'
 export const CLE_TENSION = 'tension'
 export const CLE_ACTIVITE_DUREE = 'activite_duree'
 export const CLE_RENFORCEMENT = 'renforcement'
+/** Seul champ que le système peut remplir à notre place (E7, § 15.1). */
+export const CLE_PAS = 'pas'
 
 type Prereglage = Omit<DefinitionChamp, 'personnalise'>
 
@@ -106,7 +108,7 @@ const ACTIVITE: Prereglage[] = [
   { cle: 'activite_quotidien', libelle: 'Activité du quotidien', categorie: 'activite', type: 'choix', multiple: true, options: ['Jardinage', 'Ménage', 'Courses', 'Escaliers', 'Bricolage'], actif: false, ordre: 40 },
   { cle: 'renforcement', libelle: 'Renforcement musculaire', categorie: 'activite', type: 'booleen', actif: false, ordre: 50 },
   { cle: 'distance', libelle: 'Distance parcourue', categorie: 'activite', type: 'nombre', unite: 'km', min: 0, max: 200, pas: 0.1, actif: false, ordre: 60 },
-  { cle: 'pas', libelle: 'Nombre de pas', categorie: 'activite', type: 'nombre', unite: 'pas', min: 0, max: 100_000, pas: 100, actif: false, ordre: 70 },
+  { cle: CLE_PAS, libelle: 'Nombre de pas', categorie: 'activite', type: 'nombre', unite: 'pas', min: 0, max: 100_000, pas: 100, actif: false, ordre: 70 },
 ]
 
 /** Catalogue livré à la création d'un carnet, toutes catégories confondues. */

@@ -1,7 +1,11 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    
+    // `variables.gradle` n'est appliqué qu'après ce bloc : la version y est
+    // répétée pour les dépendances du projet, elle est déclarée ici pour l'outil
+    // de compilation lui-même. Les deux doivent rester identiques.
+    ext.kotlinVersion = '2.0.21'
+
     repositories {
         google()
         mavenCentral()
@@ -9,6 +13,9 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
         classpath 'com.google.gms:google-services:4.4.4'
+        // Le client Health Connect n'expose que des fonctions suspendues :
+        // le lire depuis Java demanderait plus de code que d'ajouter Kotlin.
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

@@ -716,3 +716,68 @@ modification et retrait d'un objectif, désactivation d'un champ porteur, mode s
 chiffre, aller-retour export → import complet avec tension et choix multiples
 préservés. Le carnet réel n'a été touché à aucun moment, ce qui a été contrôlé
 ligne à ligne après chaque manipulation.
+
+---
+
+## 13. Ce que le cahier des charges annonçait et qui manquait
+
+Relecture des 672 lignes du cahier des charges, point par point, vérifiée dans le
+code. Le catalogue des champs était complet (43 sur 43), et plusieurs points que
+je croyais manquants existaient déjà : le mode rattrapage (K4), la règle 12, le
+contexte de pesée (A28), la seconde pesée (A29), l'impression et le PDF.
+
+Six manques ont été comblés, trois écartés sur décision, deux restent ouverts.
+
+### 13.1 — Comblés
+
+- **Visite guidée (J11)** — trois écrans après la première configuration, qui
+  répondent aux trois questions qu'on se pose devant un carnet vide plutôt que
+  d'énumérer des fonctions. Reprenable depuis les paramètres : « passable à tout
+  moment » suppose de pouvoir y revenir.
+- **Plein écran (G24) et période libre (G2)** — l'API plein écran du navigateur a
+  été écartée au profit d'une boîte native : Safari sur iPhone ne l'accorde
+  qu'aux vidéos, et la PWA y est la cible principale.
+- **Teintes au choix (M9)** — cinq palettes, réglage distinct de la clarté. Une
+  palette ne touche qu'aux accents, jamais aux fonds ni à l'encre : changer de
+  couleur ne peut donc pas dégrader la lisibilité. Quatre-vingts couples de
+  contraste mesurés, tous au-dessus de 4,5:1. Les jetons `--sauge` et `--bleu`
+  deviennent `--accent` et `--second` — un jeton nommé « sauge » qui rend du
+  lavande est un mensonge.
+- **Météo (C20)** — écart assumé avec le § 11.8, dans le sens du plus strict :
+  une commune choisie une fois, et non la position de l'appareil. Aucune
+  permission de géolocalisation, comportement identique en PWA et en APK.
+- **Synchronisation WebDAV (L8)** — manuelle, deux gestes. Un envoi automatique
+  supposerait de trancher une divergence sans personne pour le faire, ce que le
+  § 11.7 interdit. Les identifiants vivent hors de l'export : les mettre dans le
+  `Profil` aurait suffi à ce qu'un carnet transmis emporte de quoi écrire sur le
+  Nextcloud de son propriétaire.
+- **Import des pas (E7)** — Health Connect, et non Google Fit qui exigerait les
+  services Google écartés par le § 15.2. Un bouton dans la saisie, qui remplit le
+  champ du jour affiché ; pas d'import en masse, qui inonderait un carnet mensuel
+  de trente entrées. Une journée sans donnée reste vide et le dit — elle ne
+  devient jamais zéro pas.
+
+### 13.2 — Écartés sur décision
+
+- **Écran de ressources (§ 12.5)**, **rappel d'export après trois mois (§ 11.6)**
+  et **aide contextuelle (J10)**. Le premier reste le seul engagement du § 12 non
+  tenu, et mérite d'être reconsidéré si l'application sort du cercle familial.
+
+### 13.3 — Restés ouverts
+
+- **La vérification automatique des contrastes en intégration continue** (§ 13 et
+  § 15.3, promise au lot 0). Elle a été faite à la main pour les cinq palettes, ce
+  qui n'est pas la même chose qu'un garde-fou : le jour où quelqu'un retouchera
+  une couleur « juste un peu », rien ne le rattrapera.
+- **L'internationalisation et la publication F-Droid**, qui relèvent du lot 5.
+
+### 13.4 — Deux conséquences à connaître
+
+- **Le plancher Android passe de 8.0 à 8.0** — plus exactement de l'API 24 à
+  l'API 26, imposé par `androidx.health.connect`. Android 7 ne reçoit plus de
+  correctifs de sécurité ; le forcer par `tools:overrideLibrary` aurait produit
+  un plantage au démarrage plutôt qu'une incompatibilité franche.
+- **L'import des pas n'a pas pu être éprouvé de bout en bout.** Sur l'émulateur,
+  toute la chaîne fonctionne — greffon enregistré, permission accordée, lecture
+  aboutie — mais Health Connect n'y contient aucun pas. Le cas « des pas
+  existent » attend un vrai téléphone.

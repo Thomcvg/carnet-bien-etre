@@ -1,5 +1,10 @@
 ext {
-    minSdkVersion = 24
+    // Relevé de 24 à 26 (Android 8.0, 2017) : `connect-client` ne descend pas
+    // plus bas, et le forcer avec `tools:overrideLibrary` ferait planter le
+    // greffon au démarrage sur les appareils concernés — un plantage certain
+    // vaut moins bien qu'une compatibilité franchement abandonnée.
+    // Android 7 ne reçoit plus de correctifs de sécurité depuis des années.
+    minSdkVersion = 26
     compileSdkVersion = 36
     targetSdkVersion = 36
     androidxActivityVersion = '1.11.0'
@@ -13,4 +18,12 @@ ext {
     androidxJunitVersion = '1.3.0'
     androidxEspressoCoreVersion = '3.7.0'
     cordovaAndroidVersion = '14.0.1'
+
+    // E7 — lecture des pas (§ 15.1). Health Connect et non Google Fit : ce
+    // dernier exigerait les services Google que le § 15.2 écarte, condition
+    // d'entrée sur F-Droid. `connect-client` est une bibliothèque AndroidX
+    // libre, sans dépendance à ces services.
+    kotlinVersion = '2.0.21'
+    healthConnectVersion = '1.1.0-rc02'
+    coroutinesVersion = '1.9.0'
 }

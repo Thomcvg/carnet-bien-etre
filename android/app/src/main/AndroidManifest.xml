@@ -20,6 +20,23 @@
             </intent-filter>
         </activity>
 
+        <!--
+            E7 : Health Connect exige qu'une application déclare où elle explique
+            l'usage qu'elle fait des données de santé. Le carnet renvoie vers son
+            propre écran : il n'y a pas de politique de confidentialité distante
+            à consulter, puisqu'il n'envoie rien.
+        -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -32,4 +49,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        E7 : lecture seule, et seulement les pas. Aucune permission d'écriture,
+        aucun autre type d'enregistrement de santé n'est demandé.
+    -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+
+    <!-- Permet de vérifier la présence de Health Connect sans le supposer. -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
 </manifest>

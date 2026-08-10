@@ -25,7 +25,7 @@
   import { carnet } from '$lib/etat/carnet.svelte'
   import {
     mensurationsActives, champsBienEtreActifs, champsActiviteActifs, trouverChamp, CLE_POIDS,
-    champAffiche, CLE_TENSION,
+    champAffiche, CLE_TENSION, CLE_PAS,
   } from '$lib/domain/champs'
   import { analyserNombre, masseVersAffichage } from '$lib/domain/unites'
   import {
@@ -34,6 +34,7 @@
   import { versISO, ajouterMois, formaterDate, estDateISOValide } from '$lib/domain/dates'
   import { METEOS_MANUELLES, type MeteoMesure } from '$lib/domain/meteo'
   import { relever } from '$lib/io/meteo'
+  import { etatPas, demanderAccesPas, lirePas, type EtatPas } from '$lib/io/pas'
   import type { ContextePesee, DefinitionChamp, ValeurChamp } from '$lib/domain/types'
 
   interface Props {
@@ -59,6 +60,48 @@
   let noteDepliee = $state(false)
   let enchainer = $state(false)
   let doublonConfirme = $state(false)
+
+  /* ---------------- pas (E7, § 15.1) ---------------- */
+
+  let etatDesPas = $state<EtatPas>('indisponible')
+  let pasEnCours = $state(false)
+  let messagePas = $state('')
+
+  // Une seule interrogation du système, à l'ouverture de l'écran.
+  $effect(() => {
+    etatPas().then((e) => { etatDesPas = e.etat })
+  })
+
+  /**
+   * Reprend le total de la journée affichée. L'autorisation est demandée au
+   * moment où elle sert, et pas avant : rien ne justifie de réclamer un accès
+   * aux données de santé à quelqu'un qui n'a jamais appuyé sur le bouton.
+   */
+  async function reprendreLesPas() {
+    if (pasEnCours || !estDateISOValide(date)) return
+    pasEnCours = true
+    messagePas = ''
+    try {
+      const { autorise } = await etatPas()
+      if (!autorise && !(await demanderAccesPas())) {
+        messagePas = 'L’accès aux pas n’a pas été accordé.'
+        return
+      }
+      const jours = await lirePas(date, date)
+      const journee = jours.find((j) => j.date === date)
+      if (!journee) {
+        // Règle 5 : pas de donnée n'est pas zéro pas.
+        messagePas = 'Aucun pas enregistré pour cette journée.'
+        return
+      }
+      majSaisie(CLE_PAS, String(journee.pas))
+      messagePas = ''
+    } catch (e) {
+      messagePas = e instanceof Error ? e.message : 'La lecture des pas a échoué.'
+    } finally {
+      pasEnCours = false
+    }
+  }
 
   /* ---------------- météo (C20, § 11.8) ---------------- */
 
@@ -499,6 +542,21 @@
               {:else}
                 <ChampNombre {champ} valeur={texteDe(champ.cle)} repere={reperes[champ.cle]} onchange={(t) => majSaisie(champ.cle, t)} />
               {/if}
+
+              <!--
+                E7 : le bouton n'apparaît que dans l'application Android, et
+                seulement si Health Connect y répond. Ailleurs, le champ se
+                remplit à la main comme n'importe quel autre — c'est le repli
+                que le § 15.1 impose de conserver.
+              -->
+              {#if champ.cle === CLE_PAS && etatDesPas === 'disponible'}
+                <div class="import-pas">
+                  <button type="button" class="bouton" onclick={reprendreLesPas} disabled={pasEnCours}>
+                    {pasEnCours ? 'Lecture…' : 'Reprendre les pas de cette journée'}
+                  </button>
+                  {#if messagePas}<p class="aide">{messagePas}</p>{/if}
+                </div>
+              {/if}
             {/each}
           </div>
         {/if}
@@ -577,6 +635,11 @@
 </Modale>
 
 <style>
+  .import-pas { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+
+  .ligne-meteo { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .ligne-meteo input { flex: 1 1 10rem; }
+
   .facultatif {
     font-size: 0.78rem;
     color: var(--encre-3);
