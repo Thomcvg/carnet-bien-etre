@@ -1,0 +1,33 @@
+Carnet Bien-être n'est pas une application de contrôle du poids. C'est un carnet personnel pour prendre du recul sur son évolution.
+
+Il a été écrit pour une personne de soixante ans qui tenait ses mesures dans un tableur et voulait mieux, sans être jugée par une application.
+
+CE QU'IL FAIT
+
+• Noter ce que vous voulez, quand vous voulez : poids, mensurations, sommeil, énergie, stress, douleurs, activité, tension… ou seulement ce qui vous intéresse.
+• Rien n'est obligatoire au-delà d'une date. Toute donnée est facultative — le poids compris : un carnet qui ne suit que le sommeil est un usage à part entière.
+• Des courbes lisibles, avec une tendance lissée et une bande de variation normale — un écart qui ne veut rien dire est présenté comme une stabilité.
+• Des objectifs sur n'importe quelle donnée : atteindre une fourchette, se maintenir, ou tenir une régularité (« dormir 7 h, cinq nuits par semaine »).
+• Un bilan mensuel, une fiche imprimable pour le médecin, l'export de tout votre carnet.
+
+VOS DONNÉES
+
+Aucun compte, aucune inscription, aucun traceur, aucune publicité, aucune mesure d'audience.
+
+Tout est enregistré sur votre appareil et rien n'en part sans que vous le demandiez. Deux fonctions seulement peuvent sortir de l'appareil, désactivées par défaut : la météo (les coordonnées approximatives d'une commune que vous choisissez) et la synchronisation vers votre propre serveur Nextcloud.
+
+CE QU'IL NE FERA JAMAIS
+
+• Compter des calories ou juger un repas.
+• Vous comparer à quelqu'un d'autre — aucun classement, aucune moyenne d'utilisateurs, aucun réseau social, même en option.
+• Afficher une silhouette ou un « avant/après ».
+• Vous notifier sans y avoir été invité.
+• Prétendre remplacer un professionnel de santé.
+
+Ces refus sont inscrits dans une charte publique, opposable aux contributions.
+
+ACCESSIBILITÉ
+
+Texte jusqu'à 200 %, thème sombre et contraste élevé, navigation clavier complète, chaque graphique doublé d'un tableau de données, aucune information portée par la seule couleur.
+
+Carnet Bien-être n'est pas un dispositif médical. Il n'établit aucun diagnostic et ne remplace aucun avis professionnel. Les repères affichés sont indicatifs.

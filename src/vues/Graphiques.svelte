@@ -471,7 +471,8 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.7rem 0.7rem 0.7rem 1rem;
+    /* La boîte plein écran recouvre tout, barre d'état comprise. */
+    padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 0.7rem 0.7rem 1rem;
     border-bottom: 1px solid var(--trait);
   }
   .plein-entete h2 { margin: 0 auto 0 0; font-size: 1.1rem; }

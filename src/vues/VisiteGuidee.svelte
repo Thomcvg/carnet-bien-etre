@@ -118,7 +118,8 @@
   .visite {
     max-width: 40rem;
     margin: 0 auto;
-    padding: 2rem 1rem 4rem;
+    /* Comme l'écran de bienvenue : aucune en-tête ne protège de la barre d'état. */
+    padding: calc(2rem + env(safe-area-inset-top, 0px)) 1rem 4rem;
   }
 
   .contenu { display: flex; flex-direction: column; gap: 1.1rem; }

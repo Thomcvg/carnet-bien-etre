@@ -66,10 +66,51 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // ----------------------------------------------------------------------
+    // Signature de production.
+    //
+    // La clé n'est **pas** dans ce dépôt, et ne doit jamais y entrer : perdre
+    // le dépôt serait ennuyeux, perdre la clé serait définitif — Android
+    // refuse toute mise à jour signée par une autre, et la seule issue serait
+    // de demander à chaque personne de désinstaller, donc d'effacer son carnet.
+    //
+    // `signature.properties` vit à côté du projet, hors versionnement. En son
+    // absence, la compilation de production reste possible mais produit un
+    // paquet non signé, et le dit — plutôt que d'échouer sur un message
+    // d'outillage incompréhensible.
+    //
+    // Voir `docs/05-signature-et-diffusion.md`.
+    // ----------------------------------------------------------------------
+    def fichierSignature = rootProject.file('signature.properties')
+    def signatureDisponible = fichierSignature.exists()
+    def proprietesSignature = new Properties()
+    if (signatureDisponible) {
+        fichierSignature.withInputStream { proprietesSignature.load(it) }
+    }
+
+    signingConfigs {
+        if (signatureDisponible) {
+            production {
+                storeFile rootProject.file(proprietesSignature['storeFile'])
+                storePassword proprietesSignature['storePassword']
+                keyAlias proprietesSignature['keyAlias']
+                keyPassword proprietesSignature['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signatureDisponible) {
+                signingConfig signingConfigs.production
+            } else {
+                logger.lifecycle(
+                    "Carnet Bien-être : aucun fichier signature.properties — " +
+                    "le paquet de production sera produit NON SIGNÉ et ne s'installera pas. " +
+                    "Voir docs/05-signature-et-diffusion.md.")
+            }
         }
     }
 }

@@ -134,7 +134,8 @@
   .accueil {
     max-width: 42rem;
     margin: 0 auto;
-    padding: 2rem 1rem 4rem;
+    /* Cet écran n'a pas d'en-tête pour l'écarter de la barre d'état (§ 13). */
+    padding: calc(2rem + env(safe-area-inset-top, 0px)) 1rem 4rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;

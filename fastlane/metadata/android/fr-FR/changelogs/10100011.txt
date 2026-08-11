@@ -1,0 +1,3 @@
+Les objectifs portent désormais sur n'importe quelle donnée suivie, et pas seulement le poids : atteindre une fourchette, se maintenir, ou tenir une régularité.
+
+Nouveautés : visite guidée, courbe en plein écran, période libre, cinq teintes au choix, météo facultative, synchronisation vers votre propre Nextcloud, import des pas depuis Health Connect.

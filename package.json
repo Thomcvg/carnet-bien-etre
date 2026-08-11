@@ -15,7 +15,8 @@
     "icones": "node scripts/generer-icones.mjs",
     "icones:android": "node scripts/generer-assets-android.mjs && npx @capacitor/assets generate --android",
     "android:sync": "npm run build && npx cap sync android",
-    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:release": "npm run android:sync && cd android && ./gradlew assembleRelease"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0",

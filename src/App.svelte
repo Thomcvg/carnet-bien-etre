@@ -258,7 +258,10 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-    padding: 0.8rem 1rem;
+    /* Android 15 dessine l'application sous la barre d'état : sans cette marge,
+       le nom du carnet passait sous l'horloge. Le repli à `0px` couvre le
+       navigateur de bureau, qui n'a pas d'encoche. */
+    padding: calc(0.8rem + env(safe-area-inset-top, 0px)) 1rem 0.8rem;
     border-bottom: 1px solid var(--trait);
     background: var(--carte);
     position: sticky;
