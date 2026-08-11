@@ -3,6 +3,21 @@
 Ce guide se lit dans l'ordre ou se picore. Il n'y a rien à apprendre par cœur :
 l'application est faite pour qu'on puisse s'en servir sans guide.
 
+## L'installer
+
+Ouvrez **[thomcvg.github.io/carnet-bien-etre](https://thomcvg.github.io/carnet-bien-etre/)**
+dans le navigateur du téléphone, puis :
+
+- **Android (Chrome)** — menu ⋮ → *Ajouter à l'écran d'accueil*.
+- **iPhone (Safari)** — bouton Partager → *Sur l'écran d'accueil*.
+
+L'icône apparaît comme celle d'une application ordinaire. Le carnet fonctionne
+ensuite **sans connexion**, et se met à jour tout seul.
+
+Il existe aussi une application Android à installer séparément, utile
+uniquement pour deux choses : synchroniser vers un serveur Nextcloud, et
+reprendre les pas comptés par le téléphone.
+
 ---
 
 ## En deux phrases

@@ -46,7 +46,9 @@ la traduction — l'application est en français uniquement. Voir la
 
 ## Installer
 
-**La version web, recommandée.** Ouvrez le site dans votre navigateur et
+### 👉 [thomcvg.github.io/carnet-bien-etre](https://thomcvg.github.io/carnet-bien-etre/)
+
+**La version web, recommandée.** Ouvrez ce lien dans votre navigateur et
 ajoutez-le à l'écran d'accueil. Elle fonctionne ensuite hors ligne comme une
 application, et **se met à jour toute seule** : un bandeau discret propose la
 nouvelle version, vous choisissez le moment. Rien à réinstaller, jamais. C'est
