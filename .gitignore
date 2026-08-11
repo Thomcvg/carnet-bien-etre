@@ -17,9 +17,10 @@ ios/
 # Signature de production — jamais versionnée, sous aucune forme.
 # La clé perdue rend toute mise à jour impossible ; la clé publiée permet à
 # n'importe qui de fabriquer une fausse mise à jour du carnet.
-android/signature.properties
+signature.properties*
 *.jks
 *.keystore
+*.p12
 
 # Éditeurs
 .vscode/*

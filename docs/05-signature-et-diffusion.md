@@ -30,24 +30,37 @@ D'où trois règles, sans exception :
 
 ## 2. Créer la clé — une seule fois
 
+`keytool` fait partie du JDK et n'est généralement pas dans le `PATH`. Sous
+Windows, il se trouve avec Android Studio ou avec un JDK installé séparément :
+
+```text
+C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe
+C:\Program Files\Java\jdk-17\bin\keytool.exe
+```
+
 Depuis la racine du dépôt. La commande demande un mot de passe, puis quelques
 informations d'identité ; seul le premier champ compte réellement.
 
 ```bash
-keytool -genkeypair -v -keystore android/carnet-bien-etre.jks -alias carnet -keyalg RSA -keysize 4096 -validity 10000
+"/c/Program Files/Java/jdk-17/bin/keytool.exe" -genkeypair -v -keystore android/carnet-bien-etre.jks -alias carnet -keyalg RSA -keysize 4096 -validity 10000
 ```
 
 `-validity 10000` fait environ 27 ans. Une clé qui expire avant l'application
 oblige à tout recommencer ; il n'y a aucune raison d'être avare ici.
 
-Créer ensuite `android/signature.properties`, à côté du fichier `.jks` :
+Créer ensuite `android/signature.properties`, à côté du fichier `.jks`.
+**Le chemin de `storeFile` se lit depuis le dossier `android/`**, pas depuis la
+racine du dépôt — c'est là que vit ce fichier :
 
 ```properties
-storeFile=android/carnet-bien-etre.jks
+storeFile=carnet-bien-etre.jks
 storePassword=celui-que-vous-avez-choisi
 keyAlias=carnet
 keyPassword=le-meme-sauf-si-vous-en-avez-choisi-un-autre
 ```
+
+Une clé introuvable arrête la compilation sur un message qui donne le chemin
+attendu et le chemin déclaré, plutôt que sur une erreur d'outillage.
 
 Ce fichier n'est pas versionné. En son absence, la compilation de production
 fonctionne toujours mais produit un paquet **non signé**, et l'annonce dans sa

@@ -91,7 +91,21 @@ android {
     signingConfigs {
         if (signatureDisponible) {
             production {
-                storeFile rootProject.file(proprietesSignature['storeFile'])
+                // Chemin lu **depuis le dossier `android/`**, où vit
+                // `signature.properties`. Une clé introuvable produit sinon une
+                // erreur d'outillage qui ne dit pas laquelle des deux choses
+                // manque — le fichier, ou le bon chemin vers lui.
+                def fichierCle = rootProject.file(proprietesSignature['storeFile'])
+                if (!fichierCle.exists()) {
+                    throw new GradleException(
+                        "Carnet Bien-être : clé de signature introuvable.\n" +
+                        "  attendue ici : ${fichierCle}\n" +
+                        "  déclarée par : storeFile=${proprietesSignature['storeFile']} " +
+                        "(dans android/signature.properties)\n" +
+                        "Ce chemin se lit depuis le dossier android/. " +
+                        "Voir docs/05-signature-et-diffusion.md.")
+                }
+                storeFile fichierCle
                 storePassword proprietesSignature['storePassword']
                 keyAlias proprietesSignature['keyAlias']
                 keyPassword proprietesSignature['keyPassword']
