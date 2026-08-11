@@ -85,7 +85,13 @@ android {
     def signatureDisponible = fichierSignature.exists()
     def proprietesSignature = new Properties()
     if (signatureDisponible) {
-        fichierSignature.withInputStream { proprietesSignature.load(it) }
+        // Lecture explicite en UTF-8, marque d'ordre des octets retirée.
+        // PowerShell écrit un BOM dès qu'on lui demande de l'UTF-8, et
+        // `Properties.load` lit alors la première clé comme « ﻿storeFile » :
+        // le fichier paraît correct à l'œil, et la seule valeur qui manque est
+        // celle qui n'a pas de valeur par défaut.
+        def texte = fichierSignature.getText('UTF-8').replaceFirst('^\\uFEFF', '')
+        proprietesSignature.load(new StringReader(texte))
     }
 
     signingConfigs {

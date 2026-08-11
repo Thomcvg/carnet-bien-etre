@@ -62,6 +62,24 @@ keyPassword=le-meme-sauf-si-vous-en-avez-choisi-un-autre
 Une clé introuvable arrête la compilation sur un message qui donne le chemin
 attendu et le chemin déclaré, plutôt que sur une erreur d'outillage.
 
+**Sous PowerShell**, écrire ce fichier sans y laisser passer le mot de passe dans
+l'historique des commandes :
+
+```powershell
+$s = Read-Host "Mot de passe du keystore" -AsSecureString
+$mdp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s))
+[System.IO.File]::WriteAllLines(
+  (Join-Path $PWD 'android\signature.properties'),
+  @("storeFile=carnet-bien-etre.jks", "storePassword=$mdp", "keyAlias=carnet", "keyPassword=$mdp"),
+  (New-Object System.Text.UTF8Encoding $false))
+Remove-Variable mdp, s
+```
+
+`UTF8Encoding $false` n'est pas un détail : `Set-Content -Encoding utf8` place
+une marque d'ordre des octets en tête de fichier, et `storeFile` devient alors
+une clé que Java ne reconnaît plus. La compilation sait désormais ignorer cette
+marque, mais autant ne pas l'écrire.
+
 Ce fichier n'est pas versionné. En son absence, la compilation de production
 fonctionne toujours mais produit un paquet **non signé**, et l'annonce dans sa
 sortie plutôt que d'échouer sur un message d'outillage.
@@ -87,6 +105,34 @@ apksigner verify --print-certs android/app/build/outputs/apk/release/app-release
 L'empreinte SHA-256 affichée doit rester **identique à chaque version**. Si elle
 change, la mise à jour sera refusée par les téléphones : mieux vaut s'en rendre
 compte là qu'après diffusion.
+
+Empreinte de la clé du projet, établie à la version 1.1.0 :
+
+```text
+b9bc696a758567d32579de9a5343549adc37444c63e38e8da409b1937adbc3f8
+```
+
+Elle est notée ici pour pouvoir être comparée, pas pour être secrète : une
+empreinte de certificat est publique par nature. C'est la clé privée qui ne doit
+jamais sortir.
+
+### Passer du paquet de test au paquet signé
+
+Ils ne portent pas la même signature — le premier est signé par la clé de
+débogage de la machine, le second par la clé du projet. Android les considère
+donc comme **deux applications différentes** et refuse d'installer l'un sur
+l'autre (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
+
+Le passage se fait donc en quatre gestes, dans cet ordre :
+
+1. **Exporter une sauvegarde** depuis Paramètres → Vos données (fichier JSON).
+2. Désinstaller l'application de test.
+3. Installer le paquet signé.
+4. Restaurer la sauvegarde depuis Paramètres → Restaurer une sauvegarde.
+
+Sauter la première étape efface le carnet. C'est le seul moment de la vie de
+l'application où cela peut arriver : une fois sur la clé de production, toutes
+les mises à jour suivantes conservent les données.
 
 ## 4. Numéro de version
 
