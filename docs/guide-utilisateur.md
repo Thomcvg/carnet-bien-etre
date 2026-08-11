@@ -169,6 +169,23 @@ les deux versions et vous laisse choisir ; elle ne mélange jamais.
 
 ---
 
+## Les mises à jour
+
+Si vous utilisez la **version web** — celle que vous avez ajoutée à votre écran
+d'accueil depuis le navigateur — l'application se tient à jour toute seule. Quand
+une nouvelle version existe, un bandeau apparaît en haut :
+
+> Une nouvelle version du carnet est prête. **[Mettre à jour]**
+
+Rien ne se passe tant que vous n'appuyez pas. Vous pouvez finir ce que vous étiez
+en train de noter et appuyer plus tard, ou même ignorer le bandeau : il
+réapparaîtra. Vos données ne sont jamais touchées par une mise à jour.
+
+Si vous utilisez l'**application Android**, les mises à jour de fonctionnement
+passent aussi par là. Seules les rares évolutions qui touchent au téléphone
+lui-même — la synchronisation Nextcloud, la lecture des pas — demandent
+d'installer un nouveau fichier.
+
 ## Questions courantes
 
 **J'ai sauté trois mois. C'est grave ?**

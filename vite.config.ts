@@ -26,7 +26,18 @@ function empreinteDepot(): string {
   }
 }
 
+/**
+ * Chemin sous lequel l'application est servie.
+ *
+ * La racine dans l'APK — Capacitor sert les fichiers depuis `/` — et sur un
+ * hébergement dédié. Un sous-dossier sur GitHub Pages, où le site vit sous le
+ * nom du dépôt. Le manifeste et le service worker doivent suivre exactement,
+ * sans quoi l'application s'installe mais ne retrouve plus ses fichiers.
+ */
+const base = process.env['BASE_CARNET'] ?? '/'
+
 export default defineConfig({
+  base,
   define: {
     __VERSION_APP__: JSON.stringify(paquet.version),
     __EMPREINTE_APP__: JSON.stringify(empreinteDepot()),
@@ -35,16 +46,26 @@ export default defineConfig({
     svelte(),
     VitePWA({
       // § 15.1 : PWA installable, y compris hors ligne, sans dépendance à un store.
-      registerType: 'autoUpdate',
+      //
+      // `prompt` et non `autoUpdate`. En mode automatique, la bibliothèque
+      // appelle `window.location.reload()` dès qu'une nouvelle version
+      // s'active — donc potentiellement pendant qu'on saisit une mesure, ce qui
+      // effacerait la saisie en cours. Et le bandeau « une nouvelle version est
+      // prête », déjà écrit dans `App.svelte`, ne pouvait jamais s'afficher :
+      // `onNeedRefresh` n'existe pas dans ce mode.
+      //
+      // En mode `prompt`, la nouvelle version attend sagement, le bandeau
+      // apparaît, et c'est la personne qui choisit le moment (règle 4).
+      registerType: 'prompt',
       includeAssets: ['icones/favicon-32.png'],
       manifest: {
-        id: '/',
+        id: base,
         name: 'Carnet Bien-être',
         short_name: 'Bien-être',
         description: "Carnet personnel de suivi du poids, des mensurations et du bien-être. Vos données restent sur votre appareil et n'en partent que si vous le demandez.",
         lang: 'fr',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         // Couleurs du § 14 : le fond apaisant du carnet, et la teinte sauge de la marque.
         background_color: '#f7f6f2',
@@ -52,10 +73,10 @@ export default defineConfig({
         orientation: 'portrait-primary',
         categories: ['health', 'lifestyle'],
         icons: [
-          { src: '/icones/icone-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icones/icone-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icones/icone-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-          { src: '/icones/icone-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: base + 'icones/icone-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: base + 'icones/icone-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: base + 'icones/icone-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: base + 'icones/icone-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
@@ -64,7 +85,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
         // Les données du carnet vivent dans IndexedDB, jamais sur le réseau :
         // il n'y a donc aucune route applicative à intercepter en runtime.
-        navigateFallback: 'index.html',
+        // Sous un sous-dossier, `index.html` seul désignerait la racine du
+        // domaine : la navigation hors ligne retomberait à côté.
+        navigateFallback: base + 'index.html',
       },
       devOptions: {
         // Utile pour vérifier l'enregistrement du service worker en développement,

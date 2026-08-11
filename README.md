@@ -46,10 +46,16 @@ la traduction — l'application est en français uniquement. Voir la
 
 ## Installer
 
-- **Android** — télécharger le fichier `.apk` et l'ouvrir. Android demandera
-  l'autorisation d'installer depuis cette source, une fois. Android 8.0 minimum.
-- **iPhone, ordinateur** — ouvrir la version web et l'ajouter à l'écran d'accueil
-  depuis le navigateur. Elle fonctionne ensuite hors ligne, comme une application.
+**La version web, recommandée.** Ouvrez le site dans votre navigateur et
+ajoutez-le à l'écran d'accueil. Elle fonctionne ensuite hors ligne comme une
+application, et **se met à jour toute seule** : un bandeau discret propose la
+nouvelle version, vous choisissez le moment. Rien à réinstaller, jamais. C'est
+aussi la seule voie sur iPhone.
+
+**L'application Android**, pour deux fonctions que le web ne peut pas rendre :
+la synchronisation vers votre Nextcloud et la lecture des pas depuis Health
+Connect. Télécharger le `.apk` et l'ouvrir ; Android demandera l'autorisation
+d'installer depuis cette source, une fois. Android 8.0 minimum.
 
 Pas de Play Store : coût annuel, et conditions incompatibles avec l'AGPL.
 

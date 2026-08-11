@@ -1,0 +1,65 @@
+name: Publier la version web
+
+# La voie de mise à jour ordinaire (§ 15.1). Chaque envoi sur `main` republie la
+# PWA ; les personnes qui l'ont ajoutée à leur écran d'accueil voient apparaître
+# un bandeau « une nouvelle version est prête » et choisissent leur moment.
+#
+# L'APK ne bouge pas pour autant : il n'est refait que lorsque la partie native
+# change — la synchronisation WebDAV ou la lecture des pas. C'est ce qui permet
+# de corriger un libellé sans demander à personne de réinstaller quoi que ce soit.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Le jeton ne sert qu'à publier les pages, et rien d'autre.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une publication à la fois ; une plus récente annule celle qui attend.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construire:
+    name: Construire la version web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # `vite.config.ts` lit l'empreinte du dépôt pour l'afficher dans
+          # l'écran « À propos » : sans l'historique, elle serait vide.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Construire
+        env:
+          # GitHub Pages sert le site sous le nom du dépôt, pas à la racine.
+          BASE_CARNET: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publier:
+    name: Publier
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4

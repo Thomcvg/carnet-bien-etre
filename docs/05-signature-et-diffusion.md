@@ -144,16 +144,52 @@ Avant une diffusion, faire évoluer `version` dans `package.json` selon ce qui a
 changé : un correctif, un ajout, une refonte. Le détail est dans
 `android/app/build.gradle`, qui calcule le code de version.
 
-## 5. Diffusion
+## 5. Diffusion — deux canaux, et un seul qui bouge souvent
 
 L'application n'est pas sur le Play Store : coût annuel, et conditions
 incompatibles avec l'AGPL (§ 15.1 du cahier des charges).
 
-- **Téléchargement direct** — le fichier `.apk` se transmet tel quel. Android
-  demandera l'autorisation d'installer depuis cette source, une fois.
-- **F-Droid** — voir `docs/06-f-droid.md`.
-- **PWA** — le contenu de `dist/` s'héberge sur n'importe quel serveur statique.
-  C'est la voie pour iOS, qui n'aura pas d'application native.
+### La version web : le canal ordinaire
+
+`.github/workflows/pages.yml` republie la PWA à chaque envoi sur `main`. Les
+personnes qui l'ont ajoutée à leur écran d'accueil voient apparaître un bandeau
+« une nouvelle version du carnet est prête » et choisissent leur moment.
+
+**C'est la voie par laquelle passent presque toutes les mises à jour.** Corriger
+un libellé, ajouter un écran, changer un calcul : rien de tout cela ne demande
+de réinstaller quoi que ce soit. C'est aussi la seule voie pour iOS.
+
+### L'APK : rarement
+
+Le paquet Android n'est à refaire que lorsque **la partie native** change, ce qui
+concerne exactement trois choses :
+
+- la synchronisation WebDAV (elle passe par le code natif pour contourner la
+  politique d'origine des navigateurs) ;
+- la lecture des pas via Health Connect ;
+- les réglages du projet Android lui-même — permissions, version minimale, icône.
+
+Tout le reste vit dans la partie web, donc dans la PWA.
+
+### Ce qu'on ne fait pas : la mise à jour du code embarqué dans l'APK
+
+Il existe des mécanismes qui téléchargent un nouveau paquet web à l'intérieur
+d'une application Capacitor déjà installée. Ils sont écartés, pour trois raisons
+dont chacune suffirait :
+
+1. **La charte, règle 7.** L'application interrogerait un serveur à chaque
+   démarrage, sans que personne l'ait demandé.
+2. **F-Droid les refuse.** Une application qui télécharge et exécute du code non
+   vérifié à l'exécution n'est pas distribuable là-bas (§ 15.1, lot 5).
+3. **La sécurité.** Un serveur compromis exécuterait son code sur tous les
+   téléphones, dans une application qui contient des données de santé.
+
+La PWA rend le même service sans aucun de ces défauts : c'est un site, il se met
+à jour comme un site, et le navigateur en garantit le cloisonnement.
+
+### F-Droid
+
+Voir `docs/06-f-droid.md`.
 
 ## 6. Ce qui n'est pas automatisé, et pourquoi
 

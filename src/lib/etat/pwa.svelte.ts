@@ -10,6 +10,10 @@
  *    version est en cache et prête à remplacer l'ancienne.
  */
 
+/** Une heure : assez pour qu'une correction arrive dans la journée, assez peu
+ *  pour que ce soit une requête toutes les heures et non toutes les minutes. */
+const INTERVALLE_VERIFICATION_MS = 60 * 60 * 1000
+
 type DeclencheurInstallation = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
@@ -45,9 +49,35 @@ class EtatPwa {
         this.#appliquerMiseAJour = registerSW({
           onNeedRefresh: () => { this.miseAJourDisponible = true },
           onOfflineReady: () => {},
+          onRegisteredSW: (_url, enregistrement) => {
+            if (enregistrement) this.#surveillerLesMisesAJour(enregistrement)
+          },
         })
       })
       .catch(() => { /* pas de service worker en développement : sans conséquence */ })
+  }
+
+  /**
+   * Le navigateur ne cherche une nouvelle version qu'au chargement de la page.
+   * Une application installée reste ouverte des jours entiers : sans cette
+   * vérification périodique, une correction publiée le lundi n'apparaîtrait que
+   * le jour où l'on penserait à tout fermer.
+   *
+   * La requête ne part que si l'appareil se dit connecté, et son échec ne se
+   * voit pas : c'est une vérification de version, pas un service dont dépend le
+   * carnet.
+   */
+  #surveillerLesMisesAJour(enregistrement: ServiceWorkerRegistration): void {
+    const verifier = () => {
+      if (navigator.onLine === false) return
+      enregistrement.update().catch(() => { /* hors ligne, ou serveur muet */ })
+    }
+    setInterval(verifier, INTERVALLE_VERIFICATION_MS)
+    // Revenir à l'application après l'avoir laissée de côté est le moment le
+    // plus probable pour découvrir qu'une version l'attend.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') verifier()
+    })
   }
 
   async installer(): Promise<void> {
